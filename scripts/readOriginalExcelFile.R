@@ -9,4 +9,4 @@ siteData<-read.xlsx('Background/GTREE_Master_30Sept2015.xlsx',sheetName='SiteDat
 plotData<-read.xlsx('Background/GTREE_Master_30Sept2015.xlsx',sheetName='PlotData')
 
 write.csv (siteData, 'Data/siteData.csv', row.names=F)
-write.csv (plotData, 'Data/siteData.csv', row.names=F)
+write.csv (plotData, 'Data/plotData.csv', row.names=F)
