@@ -9,7 +9,8 @@ plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F)
 #Convert all genus species to the same format
 
 
-#cleanup the dates -
+#cleanup the dates
+
 
 
 
@@ -61,13 +62,46 @@ plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F)
 #put the lat/long/elev, utmZone INTO the plotData and make sure there is a value for each
 
 
-# run sapply (unique) against all the categorical columns at the end to make sure
-# they look nice
+# final check
+#visual scan of all categorical columns for unique values that are sensible
+#visual scan of all numeric columns for min/max values that are sensible
+i <- which(sapply(plotData
+            , is.character)==TRUE)
 
+sapply(plotData[,i], unique, 1)
 
+rm(i)#cleanup
 
-# run sapply (min, max) against all the numeric columns at the end to make sure
-# the ranges are appropriate
+i <- which(sapply(plotData
+                  , is.numeric)==TRUE)
 
+minfunction<-function(x){
+  min(x, na.rm=T)
+}
+maxfunction<-function(x){
+  max(x, na.rm=T)
+}
+
+sapply(plotData[,i], minfunction)
+sapply(plotData[,i], maxfunction)
+
+rm(i)#cleanup
+
+#repeat for sites
+
+i <- which(sapply(siteData
+                  , is.character)==TRUE)
+
+sapply(siteData[,i], unique, 1)
+
+rm(i)#cleanup
+
+i <- which(sapply(siteData
+                  , is.numeric)==TRUE)
+
+sapply(siteData[,i], minfunction)
+sapply(siteData[,i], maxfunction)
+
+rm(i)#cleanup
 
 
