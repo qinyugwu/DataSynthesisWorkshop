@@ -3,15 +3,27 @@
 # assumes working directory is set to DataSynthesisWorkshop repo
 # Script by SCE 10/8/2015
 
-siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F)
-plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F)
+siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
+                   strip.white=T)
+plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
+                   strip.white=T)
 
 #Convert all genus species to the same format
 
 
 #cleanup the dates
+#checking against original files, these are an excel problem
+"41918"   #10/6/2014
+"41919"   #10/7/2014
+plotData$date.seeded[plotData$date.seeded=="41918"]<-"20141006"
+plotData$date.seeded[plotData$date.seeded=="41919"]<-"20141007"
 
+plotData$date.seeded[plotData$date.seeded=='22.5.2014']<-'20140522'
+plotData$date.seeded[plotData$date.seeded=='3.6.2014']<-'20140306'
+plotData$date.seeded[plotData$date.seeded=='25.6.2014']<-'20140625'
 
+inTrappingData$collectDateTime <- paste(substr(inTrappingData$collectDateTime,1,8),substr(inTrappingData$collectDateTime,9,12),sep='.')
+inTrappingData$setDateTime <- paste(substr(inTrappingData$setDateTime,1,8),substr(inTrappingData$setDateTime,9,12),sep='.')
 
 
 #check start year against date
