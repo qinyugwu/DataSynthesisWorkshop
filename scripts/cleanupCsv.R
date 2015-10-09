@@ -45,22 +45,41 @@ sort(unique(plotData$zone))
 plotData$zone[plotData$zone=="Alpine" & !is.na(plotData$zone)]<-"AT"
 plotData$zone[plotData$zone=="Forest" & !is.na(plotData$zone)]<-"F"
 plotData$zone[plotData$zone=="Treeline" & !is.na(plotData$zone)]<-"T"
-plotData$zone[plotData$zone=="FT" & !is.na(plotData$zone)] #???????????????? (sites are TexasCreek and Blowdown)
+plotData$zone[plotData$zone=="FT" & !is.na(plotData$zone)] #<-???????????????? (sites are TexasCreek and Blowdown)
 
 #greater than signs in the organic depth (also in "organic"), no data instead of NA in organic depth
 
-sort(unique(plotData$organic))
+siteData$closest.seed.tree[siteData$closest.seed.tree==">500" & !is.na(siteData$closest.seed.tree)] # <-????????????
+siteData$closest.stand.tree[siteData$closest.stand.tree==">200m" & !is.na(siteData$closest.stand.tree)] # <-????????????
+
 plotData$organic[plotData$organic=="<1" & !is.na(plotData$organic)]<-"0.5"
 
+sort(unique(plotData$organic.depth))
+plotData$organic.depth[plotData$organic.depth==">30" & !is.na(plotData$organic.depth)] #<- ??????????
+plotData$organic.depth[plotData$organic.depth==">5" & !is.na(plotData$organic.depth)] #<- ?????????
+plotData$organic.depth[plotData$organic.depth=="no data" & !is.na(plotData$organic.depth)]<-NA
+
+plotData<-within(plotData,organic.depth<-as.numeric(organic.depth))
+plotData<-within(plotData,organic<-as.numeric(organic))
 
 #check to make sure all fields that should be numeric are coded as such
 
+str(siteData)
+str(plotData)
 
+# make a unique plot column - CHECK WITH ANDREW WHAT UNIQUE NAMES ARE
 
+#plotData$unique.plot<-paste(plotData$site,plotData$plot,sep="_")
 
-# make a unique plot column
+# closest.seed.tree and closest.stand.tree have questions marks
 
+sort(unique(siteData$closest.seed.tree))
 
+siteData$closest.seed.tree[siteData$closest.seed.tree=="?" & !is.na(siteData$closest.seed.tree)]<-NA
+siteData$closest.stand.tree[siteData$closest.stand.tree=="?" & !is.na(siteData$closest.stand.tree)]<-NA
+
+siteData<-within(siteData,closest.seed.tree<-as.numeric(closest.seed.tree))
+siteData<-within(siteData,closest.stand.tree<-as.numeric(closest.stand.tree))
 
 #make sure the site join works so there one and only row row of site data per
 # site within the plot data.
@@ -69,18 +88,21 @@ plotData$organic[plotData$organic=="<1" & !is.na(plotData$organic)]<-"0.5"
 
 # other column has a lot of columns and then 'herbfield'
                    
-
+plotData$other[plotData$other=="herbfield" & !is.na(plotData$other)] #<-???????????
 
 
 # natsp.y0 has a '.' in it in many rows - should this be NA or something else
 
-
+plotData$nat.seedling.sp.y0[plotData$nat.seedling.sp.y0=="." & !is.na(plotData$nat.seedling.sp.y0)] #<-????????
 
 
 #natseedling ct.yo has '1,1' in it line 350, 544
+plotData$nat.seedling.count.y0[plotData$nat.seedling.count.y0=="1,1" & !is.na(plotData$nat.seedling.count.y0)] #<-????
 
+#seeds.per.plot has "50, 50" and "100, 100"
 
-
+siteData$seeds.per.plot[siteData$seeds.per.plot=="50, 50" & !is.na(siteData$seeds.per.plot)] #<-?????????
+siteData$seeds.per.plot[siteData$seeds.per.plot=="100, 100" & !is.na(siteData$seeds.per.plot)] #<-?????????
 
 
 #put the lat/long/elev, utmZone INTO the plotData and make sure there is a value for each
