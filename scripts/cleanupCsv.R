@@ -26,10 +26,12 @@ plotData$date.seeded[plotData$date.seeded=="41919"]<-"20141007"
 plotData$date.seeded[plotData$date.seeded=='22.5.2014']<-'20140522'
 plotData$date.seeded[plotData$date.seeded=='3.6.2014']<-'20140306'
 plotData$date.seeded[plotData$date.seeded=='25.6.2014']<-'20140625'
+plotData$date.seeded[plotData$date.seeded=='16.7.2013']<-'20130716'
 
-inTrappingData$collectDateTime <- paste(substr(inTrappingData$collectDateTime,1,8),substr(inTrappingData$collectDateTime,9,12),sep='.')
-inTrappingData$setDateTime <- paste(substr(inTrappingData$setDateTime,1,8),substr(inTrappingData$setDateTime,9,12),sep='.')
 
+plotData$date.counted[plotData$]
+"2015 08 29"
+unique (plotData$date.counted)
 
 #check start year against date
 
