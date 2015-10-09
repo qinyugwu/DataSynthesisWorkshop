@@ -8,6 +8,11 @@ plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F)
 
 #Convert all genus species to the same format
 
+sort(unique(siteData$sp.seeded)) #site sheet is good
+
+sort(unique(plotData$exp.seedling.sp))
+plotData$exp.seedling.sp<-gsub("."," ",plotData$exp.seedling.sp,fixed=TRUE)
+plotData$exp.seedling.sp<-gsub("_"," ",plotData$exp.seedling.sp,fixed=TRUE)
 
 #cleanup the dates
 
@@ -20,13 +25,18 @@ plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F)
 
 
 #convert zones to standard codes desynonymizing
+sort(unique(siteData$zone)) #site codes are fine
 
-
-
-
+sort(unique(plotData$zone))
+plotData$zone[plotData$zone=="Alpine" & !is.na(plotData$zone)]<-"AT"
+plotData$zone[plotData$zone=="Forest" & !is.na(plotData$zone)]<-"F"
+plotData$zone[plotData$zone=="Treeline" & !is.na(plotData$zone)]<-"T"
+plotData$zone[plotData$zone=="FT" & !is.na(plotData$zone)] #???????????????? (sites are TexasCreek and Blowdown)
 
 #greater than signs in the organic depth (also in "organic"), no data instead of NA in organic depth
 
+sort(unique(plotData$organic))
+plotData$organic[plotData$organic=="<1" & !is.na(plotData$organic)]<-"0.5"
 
 
 #check to make sure all fields that should be numeric are coded as such
