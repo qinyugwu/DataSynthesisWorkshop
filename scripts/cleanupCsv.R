@@ -45,6 +45,10 @@ plotData$zone[plotData$zone=="Forest" & !is.na(plotData$zone)]<-"F"
 plotData$zone[plotData$zone=="Treeline" & !is.na(plotData$zone)]<-"T"
 plotData$zone[plotData$zone=="FT" & !is.na(plotData$zone)] #<-???????????????? (sites are TexasCreek and Blowdown)
 
+#change CTL to CN
+
+plotData$treatment[plotData$treatment=="CTL" & !is.na(plotData$treatment)]<-"CN"
+
 #greater than signs in the organic depth (also in "organic"), no data instead of NA in organic depth
 
 siteData$closest.seed.tree[siteData$closest.seed.tree==">500" & !is.na(siteData$closest.seed.tree)] # <-????????????
@@ -53,7 +57,7 @@ siteData$closest.stand.tree[siteData$closest.stand.tree==">200m" & !is.na(siteDa
 plotData$organic[plotData$organic=="<1" & !is.na(plotData$organic)]<-"0.5"
 
 sort(unique(plotData$organic.depth))
-plotData$organic.depth[plotData$organic.depth==">30" & !is.na(plotData$organic.depth)] #<- ??????????
+plotData$organic.depth[plotData$organic.depth==">30" & !is.na(plotData$organic.depth)] #<- ?????????? this is apparently very deep - Becca says probably 50 and definitely more than 50 (max value of other sites is 50)
 plotData$organic.depth[plotData$organic.depth==">5" & !is.na(plotData$organic.depth)] #<- ?????????
 plotData$organic.depth[plotData$organic.depth=="no data" & !is.na(plotData$organic.depth)]<-NA
 
@@ -95,7 +99,7 @@ plotData$nat.seedling.sp.y0[plotData$nat.seedling.sp.y0=="." & !is.na(plotData$n
 
 
 #natseedling ct.yo has '1,1' in it line 350, 544
-plotData$nat.seedling.count.y0[plotData$nat.seedling.count.y0=="1,1" & !is.na(plotData$nat.seedling.count.y0)] #<-????
+plotData$nat.seedling.count.y0[plotData$nat.seedling.count.y0=="1,1" & !is.na(plotData$nat.seedling.count.y0)] #<-???? THIS MEANS ONE OF EACH SPECIES
 
 #seeds.per.plot has "50, 50" and "100, 100"
 
