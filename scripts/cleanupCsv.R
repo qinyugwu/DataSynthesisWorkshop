@@ -12,6 +12,7 @@
 # check the veg cover data
 # sort out what the F FT is for zones
 # work out what to do with the NAs by checking everyone's spreadsheets
+# work with y2 data - that is totally ignored thus far, and is currently reading as a logical
 
 siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
@@ -22,6 +23,7 @@ plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
 plotData$site[plotData$site=="12 Mile "]<-'12 Mile'
 plotData$exp.seedling.sp[plotData$exp.seedling.sp=="  "]<-NA
 plotData$exp.seedling.sp[plotData$exp.seedling.sp==" "]<-NA
+
 
 #Convert all genus species to the same format
 
@@ -87,6 +89,8 @@ str(plotData)
 
 plotData$nat.seedling.count.y0<-suppressWarnings(as.integer(
   plotData$nat.seedling.count.y0))
+plotData$nat.seedling.sp.y1<-suppressWarnings(as.integer(
+  plotData$nat.seedling.sp.y1))
 
 # make a unique plot column - CHECK WITH ANDREW WHAT UNIQUE NAMES ARE
 
@@ -201,7 +205,6 @@ unique(plotData$site[!is.na(plotData$exp.seedling.count.y2)])
 
 #Fill in the seeded spp to plotData where not there already
 siteSpecies<-unique(siteData[,c('site', 'sp.seeded')])
-
 
 #save full copy incase you want full set back
 bu<-plotData

@@ -1,3 +1,5 @@
+#NOTE MODIFIED TO LEAVE IN NON-ASCII CHARACTERS
+
 rem_specialChars <- function(df, cols){
   # check that all cols exist in df
 	notInDF <- which(!cols %in% names(df))
@@ -7,25 +9,25 @@ rem_specialChars <- function(df, cols){
 	# convert to character 
 	df[,cols] <- apply(df[,cols],2,as.character)
 
-  #define subfunction to turn nonascii to spaces
-  ASCIIfy<-function(string){
-    require (stringi, quiet =T) 
-    if(!is.na(string)){
-      if(nchar(string)>0){
-        splitString<-plyr::laply(seq(1,nchar(string),1), function(i) substr(string, i, i))
-        nonASCII<-which(!stri_enc_isascii(splitString))
-        splitString[nonASCII]<-' '
-        string<-paste(splitString, collapse='')
-      }
-    }
-    return (string)
-  }
+#   #define subfunction to turn nonascii to spaces
+#   ASCIIfy<-function(string){
+#     require (stringi, quiet =T) 
+#     if(!is.na(string)){
+#       if(nchar(string)>0){
+#         splitString<-plyr::laply(seq(1,nchar(string),1), function(i) substr(string, i, i))
+#         nonASCII<-which(!stri_enc_isascii(splitString))
+#         splitString[nonASCII]<-' '
+#         string<-paste(splitString, collapse='')
+#       }
+#     }
+#     return (string)
+#   }
   
   colNums <- which(names(df) %in% cols)
   #Remove leading and trailing whitespace, newline characters, tab characters, etc.
   for (i in colNums){
     for (j in 1:nrow(df)){
-      df[j,i] <- lapply (df[j,i], ASCIIfy)  #sub in whitespace for nonascii
+      #df[j,i] <- lapply (df[j,i], ASCIIfy)  #sub in whitespace for nonascii
       df[j,i] <- lapply (df[j,i], function(x)(gsub('\\n', ' ',x)))  #Remove newline characters
       df[j,i] <- lapply (df[j,i], function(x)(gsub('\\t', ' ',x)))  #Remove tab characters
       df[j,i] <- lapply (df[j,i], function(x)(gsub('\\r', ' ',x)))  #Remove carriage return characters
