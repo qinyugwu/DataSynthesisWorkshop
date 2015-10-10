@@ -26,10 +26,12 @@ plotData$date.seeded[plotData$date.seeded=="41919"]<-"20141007"
 plotData$date.seeded[plotData$date.seeded=='22.5.2014']<-'20140522'
 plotData$date.seeded[plotData$date.seeded=='3.6.2014']<-'20140306'
 plotData$date.seeded[plotData$date.seeded=='25.6.2014']<-'20140625'
+plotData$date.seeded[plotData$date.seeded=='16.7.2013']<-'20130716'
 
-inTrappingData$collectDateTime <- paste(substr(inTrappingData$collectDateTime,1,8),substr(inTrappingData$collectDateTime,9,12),sep='.')
-inTrappingData$setDateTime <- paste(substr(inTrappingData$setDateTime,1,8),substr(inTrappingData$setDateTime,9,12),sep='.')
 
+plotData$date.counted[plotData$]
+"2015 08 29"
+unique (plotData$date.counted)
 
 #check start year against date
 
@@ -151,5 +153,59 @@ sapply(siteData[,i], minfunction)
 sapply(siteData[,i], maxfunction)
 
 rm(i)#cleanup
+
+#head (plotData)
+
+unique(plotData$site[!is.na(plotData$exp.seedling.count.y2)])
+#put the total count back into a single column?
+
+
+#run nodata only on Sarah's computer
+if (getwd()=="C:/Users/selmendorf/Documents/GTREE/DataSynthesisWorkshop"){
+library (doParallel) #to speed up the loops
+
+#figure out your computer
+myNumCores<-detectCores()
+
+#assign half of your cores to the cluster
+cl <- makeCluster(round(myNumCores/2))
+registerDoParallel(cl)
+
+
+plotData[plotData=='']<-NA
+plotData[plotData=='nodata']<-NA
+plotData[plotData=='.']<-NA
+plotData[plotData==' ']<-NA
+
+r<-foreach(i=1:nrow(tosFile))
+
+r<-foreach(i=1:length(unique(plotData$site)))%dopar% {
+#for (i in unique (plotData$site)){
+  site<-unique(plotData$site)[i]
+  outvals<-NULL
+  dat1<-plotData[plotData$site==site,]
+  trtmts<-unique(dat1$treatment)
+    for (j in trtmts){
+      dat<-dat1[dat1$treatment==j,]    
+      for (k in 1:nrow(dat)){
+        for (m in 1:ncol(dat)){
+          if (is.na(dat[k,m])){
+            vals<-c(site, j, names(dat)[m], dat[k,m])
+            outvals<-rbind(outvals, vals)
+          }      
+        }
+      }
+    }
+  outvals<-data.frame(outvals)
+  return (outvals)
+}
+
+
+noData<-plyr::rbind.fill(r)
+names(noData)<-c('site', 'trtmt', 'var')
+noData<-unique(noData)
+
+}
+
 
 
