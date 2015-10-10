@@ -1,3 +1,45 @@
+#PREPARE DATA
+
+plotDatasub<-plotData[plotData$site != "Churchill, MB",]
+
+#extract only ONE SPECIES for now
+myspp<-as.data.frame(unique(siteData[,c("site","sp.seeded")]))
+myspp<-myspp[!duplicated(myspp$site),]
+plotDatasub$spp.number<-as.numeric(as.factor(paste(plotData$site,plotData$exp.seedling.sp)))
+
+#Unique plot names per plot
+plotDatasub$uniquePlot<-paste(plotDatasub$site,plotDatasub$zone,plotDatasub$transect,plotDatasub$plot,sep="_")
+
+#check this
+tempor<-as.data.frame(table(plotDatasub$uniquePlot))
+tempor[tempor$Freq>1,]
+#CHURCHILL IS WEIRD! LEAVE OUT FOR NOW
+
+numSeeded
+
+plotDatasub$seedT<-0
+plotDatasub$seedT[plotDatasub$treatment %in% c("SD","SS","PSS")]<-1 #need this to be per plot
+
+plotDatasub$scarT<-0
+plotDatasub$scarT[plotDatasub$treatment %in% c("SC","SS","PSS","PSC")]<-1 #per plot
+
+#list of unique plots with the associated site number also with scarT 
+#take only the first year seeded and only non-herbivory treatment for Davos
+
+jags.dat<-list(
+  #y = number of naturally occuring + germinated for species of interest only (in that plot)
+  #germRate = make up a number between zero and 1 for each site (length of the number of sites)
+  #siteData = one value indicating site to go with germ Rate
+  #sitePlot = vector indicating site, length of the total number of unique plots
+  #nsite
+  #n = total rows
+  #nplot
+  
+  )
+
+
+
+
 #numAdded = 100
 #numNatOccuring = 10
 
