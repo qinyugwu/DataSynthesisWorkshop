@@ -45,7 +45,7 @@ sort(unique(plotData$zone))
 plotData$zone[plotData$zone=="Alpine" & !is.na(plotData$zone)]<-"AT"
 plotData$zone[plotData$zone=="Forest" & !is.na(plotData$zone)]<-"F"
 plotData$zone[plotData$zone=="Treeline" & !is.na(plotData$zone)]<-"T"
-plotData$zone[plotData$zone=="FT" & !is.na(plotData$zone)] #<-???????????????? (sites are TexasCreek and Blowdown)
+plotData$zone[plotData$zone=="FT" & !is.na(plotData$zone)]<-"T" #???????????????? (sites are TexasCreek and Blowdown)
 
 #change CTL to CN
 
@@ -59,7 +59,7 @@ siteData$closest.stand.tree[siteData$closest.stand.tree==">200m" & !is.na(siteDa
 plotData$organic[plotData$organic=="<1" & !is.na(plotData$organic)]<-"0.5"
 
 sort(unique(plotData$organic.depth))
-plotData$organic.depth[plotData$organic.depth==">30" & !is.na(plotData$organic.depth)] #<- ?????????? this is apparently very deep - Becca says probably 50 and definitely more than 50 (max value of other sites is 50)
+plotData$organic.depth[plotData$organic.depth==">30" & !is.na(plotData$organic.depth)]<-50 #?????????? this is apparently very deep - Becca says probably 50 and definitely more than 50 (max value of other sites is 50)
 plotData$organic.depth[plotData$organic.depth==">5" & !is.na(plotData$organic.depth)] #<- ?????????
 plotData$organic.depth[plotData$organic.depth=="no data" & !is.na(plotData$organic.depth)]<-NA
 
@@ -97,7 +97,7 @@ plotData$other[plotData$other=="herbfield" & !is.na(plotData$other)] #<-????????
 
 # natsp.y0 has a '.' in it in many rows - should this be NA or something else
 
-plotData$nat.seedling.sp.y0[plotData$nat.seedling.sp.y0=="." & !is.na(plotData$nat.seedling.sp.y0)] #<-????????
+plotData$nat.seedling.sp.y0[plotData$nat.seedling.sp.y0=="." & !is.na(plotData$nat.seedling.sp.y0)]<-0 #????????
 
 
 #natseedling ct.yo has '1,1' in it line 350, 544
@@ -105,11 +105,24 @@ plotData$nat.seedling.count.y0[plotData$nat.seedling.count.y0=="1,1" & !is.na(pl
 
 #seeds.per.plot has "50, 50" and "100, 100"
 
-siteData$seeds.per.plot[siteData$seeds.per.plot=="50, 50" & !is.na(siteData$seeds.per.plot)] #<-?????????
-siteData$seeds.per.plot[siteData$seeds.per.plot=="100, 100" & !is.na(siteData$seeds.per.plot)] #<-?????????
+siteData$seeds.per.plot[siteData$seeds.per.plot=="50, 50" & !is.na(siteData$seeds.per.plot)]<-50
+siteData$seeds.per.plot[siteData$seeds.per.plot=="100, 100" & !is.na(siteData$seeds.per.plot)]<-100
 
 
 #put the lat/long/elev, utmZone INTO the plotData and make sure there is a value for each
+
+#make a column of subplots for the Davos site
+unique(plotData[plotData$site=="Davos",c("site","zone","transect","plot","treatment","herb.treat","date.seeded")])
+unique(plotData[plotData$site=="Davos" & plotData$plot=="p142",c("site","zone","transect","plot","treatment","herb.treat","date.seeded")])
+
+#DAVOS site - treatment is at the plot level but herb.treat and date.seeded are subplots within plot
+plotData$subplot[plotData$site=="Davos"]<-paste(plotData$plot[plotData$site=="Davos"],plotData$date.seeded[plotData$site=="Davos"],sep="_")
+
+#Some sites have different plot names for the different species - remove this - BUT CHECK THAT THESE REALLY ARE THE SAME PLOT!
+
+unique(plotData$site[is.na(as.numeric(plotData$plot))]) #Canol Trail, Churchill, Davos and Wolf Creek have letters in plot names - Davos doesn't matter
+
+plotData$plot[plotData$site %in% c("Canol Trail, NWT","Churchill, MB", "Wolf Creek, YK")]<-gsub("[[:alpha:]]","",plotData$plot[plotData$site %in% c("Canol Trail, NWT","Churchill, MB", "Wolf Creek, YK")])
 
 
 # final check
