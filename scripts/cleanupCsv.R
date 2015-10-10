@@ -11,11 +11,13 @@
 # add in and otherwise rectify the emergence vs survival data
 # check the veg cover data
 # sort out what the F FT is for zones
+# work out what to do with the NAs by checking everyone's spreadsheets
 
 siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
 plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
+
 
 #Convert all genus species to the same format
 
@@ -74,6 +76,9 @@ plotData<-within(plotData,organic<-as.numeric(organic))
 
 str(siteData)
 str(plotData)
+
+plotData$nat.seedling.count.y0<-suppressWarnings(as.integer(
+  plotData$nat.seedling.count.y0))
 
 # make a unique plot column - CHECK WITH ANDREW WHAT UNIQUE NAMES ARE
 
@@ -186,7 +191,6 @@ rm(i)#cleanup
 unique(plotData$site[!is.na(plotData$exp.seedling.count.y2)])
 #put the total count back into a single column?
 
-
 #Fill in the seeded spp to plotData where not there already
 siteSpecies<-unique(siteData[,c('site', 'sp.seeded')])
 
@@ -207,10 +211,28 @@ plotData$exp.seedling.sp[is.na(plotData$exp.seedling.sp)]<-plotData$sp.seeded[is
 #check all filled
 #unique (plotData$exp.seedling.sp)
 
+#HIGH RISK, WE SHOULD DOUBLE CHECK THE NA SPREADSHEET
+#THIS IS MORE COMPLICATED FOR YEAR 2 - some did NOT SURVEY
+plotData$nat.seedling.count.y0[is.na(plotData$nat.seedling.count.y0)]<-'0'
+plotData$nat.seedling.count.y1[is.na(plotData$nat.seedling.count.y1)]<-'0'
+
+plotData$exp.seedling.count.y0[is.na(plotData$exp.seedling.count.y0)]<-'0'
+plotData$exp.seedling.count.y1[is.na(plotData$exp.seedling.count.y1)]<-'0'
+
+
+
+
+#make a total column which is the sum of expseedling cts plus natural 
+#seedling counts OF THE CORRECT species
 for (i in 1:nrow(plotData)){
   plotData$tot.emerge.y1[i]<-plotData$exp.seedling.count.y1[i]
+  #assume that nonseeded plots with NA in expt seedling didn't write them in here
+  if (plotData$treatment[i]%in%c('SC', 'CN', 'PSC')&is.na(plotData$tot.emerge.y1[i])){
+    plotData$tot.emerge.y1[i]<-0    
+  }
   if (!is.na(plotData$nat.seedling.count.y1[i])&!is.na(plotData$nat.seedling.sp.y1[i])){
-    toadd<-plotData$nat.nat.seedling.count.y1[i]*plotData$nat.seedling.sp.y1[i]==plotData$exp.seedling.sp[i]
+    toadd<-plotData$nat.seedling.count.y1[i]*
+      ifelse(plotData$nat.seedling.sp.y1[i]==plotData$exp.seedling.sp[i],1,0)
     plotData$tot.emerge.y1[i]<-plotData$tot.emerge.y1[i]+toadd
   }
 }
