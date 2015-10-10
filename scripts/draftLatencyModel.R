@@ -1,11 +1,12 @@
 #PREPARE DATA
 
-plotDatasub<-plotData[plotData$site != "Churchill, MB",]
+plotDatasub<-plotData[plotData$site %in% c("Churchill, MB","Canol Trail, NWT","Wolf Creek, YK")==FALSE,]
 
 #extract only ONE SPECIES for now
 myspp<-as.data.frame(unique(siteData[,c("site","sp.seeded")]))
 myspp<-myspp[!duplicated(myspp$site),]
-plotDatasub$spp.number<-as.numeric(as.factor(paste(plotData$site,plotData$exp.seedling.sp)))
+#this will be called exp.seedling.sp
+plotDatasub<-merge(plotDatasub,myspp,by.x=c("site","exp.seedling.sp"),by.y=c("site","sp.seeded")) #!!!
 
 #Unique plot names per plot
 plotDatasub$uniquePlot<-paste(plotDatasub$site,plotDatasub$zone,plotDatasub$transect,plotDatasub$plot,sep="_")
@@ -15,26 +16,43 @@ tempor<-as.data.frame(table(plotDatasub$uniquePlot))
 tempor[tempor$Freq>1,]
 #CHURCHILL IS WEIRD! LEAVE OUT FOR NOW
 
-numSeeded
-
 plotDatasub$seedT<-0
 plotDatasub$seedT[plotDatasub$treatment %in% c("SD","SS","PSS")]<-1 #need this to be per plot
 
 plotDatasub$scarT<-0
 plotDatasub$scarT[plotDatasub$treatment %in% c("SC","SS","PSS","PSC")]<-1 #per plot
 
-#list of unique plots with the associated site number also with scarT 
 #take only the first year seeded and only non-herbivory treatment for Davos
+plotDatasub<-plotDatasub[c(plotDatasub$site=="Davos" & c(plotDatasub$start.year==2014 | plotDatasub$provenance=="low" | plotDatasub$herb.treat=="ex"))==FALSE,]
+
+#AT only
+plotDatasub<-plotDatasub[plotDatasub$zone=="AT",]
+
+
+#list of unique plots with the associated site number also with scarT 
+
+#make up germination rate data but replace this will real data later
+germRate<-setNames(as.data.frame(cbind(c(seq(0,length(unique(plotDatasub$site)),by=1)),c(runif(length(unique(plotDatasub$site)),0,1)))),c("siteNum","germRate"))
+
+
+#For JAGS
+
+plotDatasub$siteNum<-as.numeric(as.factor(plotDatasub$site))
+plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
+
+plots<-unique(plotDatasub[,c("siteNum","uniquePlotNum","seedT","scarT")])
 
 jags.dat<-list(
-  #y = number of naturally occuring + germinated for species of interest only (in that plot)
-  #germRate = make up a number between zero and 1 for each site (length of the number of sites)
-  #siteData = one value indicating site to go with germ Rate
-  #sitePlot = vector indicating site, length of the total number of unique plots
-  #nsite
-  #n = total rows
-  #nplot
-  
+  y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only (in that plot)
+  nplot=length(unique(plotDatasub$uniquePlotNum)),
+  nsite=length(unique(plotDatasub$site)),
+  n=nrow(plotDatasub),
+  germRate=germRate$germRate, # make up a number between zero and 1 for each site (length of the number of sites)
+  siteData=germRate$siteNum, #one value indicating site to go with germ Rate
+  seedT=plots$seedT,
+  scarT=plots$scarT,
+  sitePlot=plots$siteNum, #vector indicating site, length of the total number of unique plots
+  #numSeeded
   )
 
 
@@ -53,6 +71,9 @@ jags.dat<-list(
 #need a vector one per row of plot ->ids per row
 #need a vector one per row of numseeded ->ids
 #need a vector one per row of site -> ids
+
+write("
+      model{
 
 for (i in 1:n){ #i indexes over data rows
   y[i] <-numTrtRecruitALL[i] + numBackground[i] #mixture
@@ -100,5 +121,11 @@ muBackground~normal (0,100)
 # numTrtRecruit[trt==seeded]~poisson (muRecruit)
 # muRecruit=exp(log(trials)+aSite[site[i]+bscarifcation[site[i]*scarifiation[plot[i]]]]) # could add in extra poisson resid variation here if wanted
 
+      }
+      ","gtree_y1germ.jags")
 
+inits<-list()
+  
+params<-c()
 
+modout.allsp<-jags(jags.dat,inits, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=1000,n.burnin=500, n.thin=2, DIC=FALSE, working.directory=NULL, progress.bar = "text") 
