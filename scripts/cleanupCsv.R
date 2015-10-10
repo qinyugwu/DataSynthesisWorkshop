@@ -1,7 +1,16 @@
 # Script to cleanup csvs 
 # rerun ONLY when/if csv export of excel is updated
 # assumes working directory is set to DataSynthesisWorkshop repo
-# Script by SCE 10/8/2015
+# Script by SCE 10/8/2015 & ADB
+
+
+#TODO:
+#cleanup date counted
+#check start year against date
+#decipher the multiseeded species data
+# add in and otherwise rectify the emergence vs survival data
+# check the veg cover data
+# sort out what the F FT is for zones
 
 siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
@@ -12,14 +21,15 @@ plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
 
 sort(unique(siteData$sp.seeded)) #site sheet is good
 
+#plot needs fixing, so we fixed it
 sort(unique(plotData$exp.seedling.sp))
 plotData$exp.seedling.sp<-gsub("."," ",plotData$exp.seedling.sp,fixed=TRUE)
 plotData$exp.seedling.sp<-gsub("_"," ",plotData$exp.seedling.sp,fixed=TRUE)
 
 #cleanup the dates
 #checking against original files, these are an excel problem
-"41918"   #10/6/2014
-"41919"   #10/7/2014
+#"41918"   #10/6/2014
+#"41919"   #10/7/2014
 plotData$date.seeded[plotData$date.seeded=="41918"]<-"20141006"
 plotData$date.seeded[plotData$date.seeded=="41919"]<-"20141007"
 
@@ -28,14 +38,8 @@ plotData$date.seeded[plotData$date.seeded=='3.6.2014']<-'20140306'
 plotData$date.seeded[plotData$date.seeded=='25.6.2014']<-'20140625'
 plotData$date.seeded[plotData$date.seeded=='16.7.2013']<-'20130716'
 
-
-plotData$date.counted[plotData$]
-"2015 08 29"
+#plotData$date.counted is still all fucked up, but we didn't dealwith it
 unique (plotData$date.counted)
-
-#check start year against date
-
-
 
 
 #convert zones to standard codes desynonymizing
@@ -97,7 +101,13 @@ plotData$other[plotData$other=="herbfield" & !is.na(plotData$other)] #<-????????
 
 # natsp.y0 has a '.' in it in many rows - should this be NA or something else
 
-plotData$nat.seedling.sp.y0[plotData$nat.seedling.sp.y0=="." & !is.na(plotData$nat.seedling.sp.y0)]<-0 #????????
+#plotData$nat.seedling.sp.y0[plotData$nat.seedling.sp.y0=="." & !is.na(plotData$nat.seedling.sp.y0)]<-0 #????????
+
+#assume if theres no count, we don't care about the species.
+plotData$nat.seedling.sp.y0[plotData$nat.seedling.count.y0==0]<-NA
+plotData$nat.seedling.sp.y1[plotData$nat.seedling.count.y1==0]<-NA
+plotData$nat.seedling.sp.y2[plotData$nat.seedling.count.y2==0]<-NA
+
 
 
 #natseedling ct.yo has '1,1' in it line 350, 544
@@ -123,6 +133,10 @@ plotData$subplot[plotData$site=="Davos"]<-paste(plotData$plot[plotData$site=="Da
 unique(plotData$site[is.na(as.numeric(plotData$plot))]) #Canol Trail, Churchill, Davos and Wolf Creek have letters in plot names - Davos doesn't matter
 
 plotData$plot[plotData$site %in% c("Canol Trail, NWT","Churchill, MB", "Wolf Creek, YK")]<-gsub("[[:alpha:]]","",plotData$plot[plotData$site %in% c("Canol Trail, NWT","Churchill, MB", "Wolf Creek, YK")])
+
+
+
+
 
 
 # final check
@@ -173,31 +187,62 @@ unique(plotData$site[!is.na(plotData$exp.seedling.count.y2)])
 #put the total count back into a single column?
 
 
+#Fill in the seeded spp to plotData where not there already
+siteSpecies<-unique(siteData[,c('site', 'sp.seeded')])
+
+plotData$site[plotData$site=="12 Mile "]<-'12 Mile'
+plotData$exp.seedling.sp[plotData$exp.seedling.sp=="  "]<-NA
+plotData$exp.seedling.sp[plotData$exp.seedling.sp==" "]<-NA
+" " 
+#save full copy incase you want full set back
+bu<-plotData
+#NOTE IGNORED STEVE'S SITES DUE TO MULTISEEDING CONFUSION
+plotData<-merge(bu[!bu$site%in%(c('Churchill, MB',
+                                  'Wolf Creek, YK',
+                                  'Canol Trail, NWT',
+                                  'Rif Blanc')),], siteSpecies, all.x=T)
+
+plotData$exp.seedling.sp[is.na(plotData$exp.seedling.sp)]<-plotData$sp.seeded[is.na(plotData$exp.seedling.sp)]
+
+#check all filled
+#unique (plotData$exp.seedling.sp)
+
+for (i in 1:nrow(plotData)){
+  plotData$tot.emerge.y1[i]<-plotData$exp.seedling.count.y1[i]
+  if (!is.na(plotData$nat.seedling.count.y1[i])&!is.na(plotData$nat.seedling.sp.y1[i])){
+    toadd<-plotData$nat.nat.seedling.count.y1[i]*plotData$nat.seedling.sp.y1[i]==plotData$exp.seedling.sp[i]
+    plotData$tot.emerge.y1[i]<-plotData$tot.emerge.y1[i]+toadd
+  }
+}
+
+unique(plotData$nat.seedling.count.y1[plotData$treatment%in%c('SC','CN')&
+                                        plotData$nat.seedling.sp.y1==plotData$exp.seedling.sp])
+
+
+
 #run nodata only on Sarah's computer
 if (getwd()=="C:/Users/selmendorf/Documents/GTREE/DataSynthesisWorkshop"){
-library (doParallel) #to speed up the loops
-
-#figure out your computer
-myNumCores<-detectCores()
-
-#assign half of your cores to the cluster
-cl <- makeCluster(round(myNumCores/2))
-registerDoParallel(cl)
-
-
-plotData[plotData=='']<-NA
-plotData[plotData=='nodata']<-NA
-plotData[plotData=='.']<-NA
-plotData[plotData==' ']<-NA
-
-r<-foreach(i=1:nrow(tosFile))
-
-r<-foreach(i=1:length(unique(plotData$site)))%dopar% {
-#for (i in unique (plotData$site)){
-  site<-unique(plotData$site)[i]
-  outvals<-NULL
-  dat1<-plotData[plotData$site==site,]
-  trtmts<-unique(dat1$treatment)
+  library (doParallel) #to speed up the loops
+  
+  #figure out your computer
+  myNumCores<-detectCores()
+  
+  #assign half of your cores to the cluster
+  cl <- makeCluster(round(myNumCores/2))
+  registerDoParallel(cl)
+  
+  
+  plotData[plotData=='']<-NA
+  plotData[plotData=='nodata']<-NA
+  plotData[plotData=='.']<-NA
+  plotData[plotData==' ']<-NA
+  
+  r<-foreach(i=1:length(unique(plotData$site)))%dopar% {
+    #for (i in unique (plotData$site)){
+    site<-unique(plotData$site)[i]
+    outvals<-NULL
+    dat1<-plotData[plotData$site==site,]
+    trtmts<-unique(dat1$treatment)
     for (j in trtmts){
       dat<-dat1[dat1$treatment==j,]    
       for (k in 1:nrow(dat)){
@@ -209,16 +254,14 @@ r<-foreach(i=1:length(unique(plotData$site)))%dopar% {
         }
       }
     }
-  outvals<-data.frame(outvals)
-  return (outvals)
+    outvals<-data.frame(outvals)
+    return (outvals)
+  }
+  
+  
+  noData<-plyr::rbind.fill(r)
+  names(noData)<-c('site', 'trtmt', 'var')
+  noData<-unique(noData)
+  
 }
-
-
-noData<-plyr::rbind.fill(r)
-names(noData)<-c('site', 'trtmt', 'var')
-noData<-unique(noData)
-
-}
-
-
 
