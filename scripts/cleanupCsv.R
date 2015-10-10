@@ -19,11 +19,8 @@ siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
 plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
 
-#manuall strip white
-plotData$site[plotData$site=="12 Mile "]<-'12 Mile'
-plotData$exp.seedling.sp[plotData$exp.seedling.sp=="  "]<-NA
-plotData$exp.seedling.sp[plotData$exp.seedling.sp==" "]<-NA
-
+#replace blanks with NA in exp.seedling.sp
+plotData$exp.seedling.sp[plotData$exp.seedling.sp==""]<-NA
 
 #Convert all genus species to the same format
 
@@ -87,10 +84,11 @@ plotData<-within(plotData,organic<-as.numeric(organic))
 str(siteData)
 str(plotData)
 
+#convert seedling counts to integers
 plotData$nat.seedling.count.y0<-suppressWarnings(as.integer(
   plotData$nat.seedling.count.y0))
-plotData$nat.seedling.sp.y1<-suppressWarnings(as.integer(
-  plotData$nat.seedling.sp.y1))
+plotData$nat.seedling.count.y1<-suppressWarnings(as.integer(
+  plotData$nat.seedling.count.y1))
 
 # make a unique plot column - CHECK WITH ANDREW WHAT UNIQUE NAMES ARE
 
@@ -106,15 +104,12 @@ siteData$closest.stand.tree[siteData$closest.stand.tree=="?" & !is.na(siteData$c
 siteData<-within(siteData,closest.seed.tree<-as.numeric(closest.seed.tree))
 siteData<-within(siteData,closest.stand.tree<-as.numeric(closest.stand.tree))
 
-#make sure the site join works so there one and only row row of site data per
-# site within the plot data.
-
-
 
 # other column has a lot of columns and then 'herbfield'
                    
 plotData$other[plotData$other=="herbfield" & !is.na(plotData$other)] #<-???????????
 
+plotData$nat.seedling.sp.y0[plotData$nat.seedling.sp.y0=='ABLA']<-'Abies lasiocarpa'
 
 # natsp.y0 has a '.' in it in many rows - should this be NA or something else
 
@@ -125,10 +120,9 @@ plotData$nat.seedling.sp.y0[plotData$nat.seedling.count.y0==0]<-NA
 plotData$nat.seedling.sp.y1[plotData$nat.seedling.count.y1==0]<-NA
 plotData$nat.seedling.sp.y2[plotData$nat.seedling.count.y2==0]<-NA
 
-
-
 #natseedling ct.yo has '1,1' in it line 350, 544
-plotData$nat.seedling.count.y0[plotData$nat.seedling.count.y0=="1,1" & !is.na(plotData$nat.seedling.count.y0)] #<-???? THIS MEANS ONE OF EACH SPECIES
+plotData$nat.seedling.count.y0[plotData$nat.seedling.count.y0=="1,1" &
+                                 !is.na(plotData$nat.seedling.count.y0)] #<-???? THIS MEANS ONE OF EACH SPECIES
 
 #seeds.per.plot has "50, 50" and "100, 100"
 
@@ -150,11 +144,6 @@ plotData$subplot[plotData$site=="Davos"]<-paste(plotData$plot[plotData$site=="Da
 unique(plotData$site[is.na(as.numeric(plotData$plot))]) #Canol Trail, Churchill, Davos and Wolf Creek have letters in plot names - Davos doesn't matter
 
 plotData$plot[plotData$site %in% c("Canol Trail, NWT","Churchill, MB", "Wolf Creek, YK")]<-gsub("[[:alpha:]]","",plotData$plot[plotData$site %in% c("Canol Trail, NWT","Churchill, MB", "Wolf Creek, YK")])
-
-
-
-
-
 
 # final check
 #visual scan of all categorical columns for unique values that are sensible
