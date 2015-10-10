@@ -47,55 +47,58 @@ jags.dat<-list(
 
 #log(y) = Bprop*log(numAdded + numNatOccuring)
 
-#
-for (i in 1:n){
-  y<-numTrtRecruit + numBackground  
+#need n = number of data points
+#need a vector one per row of data y ->total#seedlings of species of interest
+#need a vector one per row of data seedT ->seeded or not?
+#need a vector one per row of plot ->ids per row
+#need a vector one per row of numseeded ->ids
+#need a vector one per row of site -> ids
+
+for (i in 1:n){ #i indexes over data rows
+  y[i] <-numTrtRecruitALL[i] + numBackground[i] #mixture
+  numTrtRecruitALL[i]<-numTrtRecruit[i]*seedT[i] #this will cause the numTrtRecruit not to enter the likelihood for the nonseeded plots
+  numTrtRecruit[i]~binomial (emergRate[plot[i]], trials[i]) 
+  trials[i]<-numSeeded[i]*germRate[siteData[i]]
 }
 
-numTrtRecruit[seedtrt==ctl]<-0
-
-#binomial option
-numTrtRecruit[trt==seeded]~binomial (success rate, trials)
-
-success rate <- invlogit(aSite[site[i]] + bscarification[site[i]]*scarification[plot[i]])
-trials<-numseeded*germination rate
-
-germination rate[site] ~ binomial (germinantsInGreenhouse, SeedsInGreenhouse)
+#need a vector sitePlot of each sitenumber for each plot
+#need a vector of scarT (1,0) for each plot
+for (j in 1:nplot){
+  emergRate[j]<-invlogit(aSite[sitePlot[j]]+bscarT[sitePlot[j]*scarT[j]])
+  numBackground[j] ~ poisson (muBackground[sitePlot[j])
+}
 
 
-#poisson option
-numTrtRecruit[trt==seeded]~poisson (muRecruit)
-muRecruit=exp(log(trials)+aSite[site[i]+bscarifcation[site[i]*scarifiation[plot[i]]]]) # could add in extra poisson resid variation here if wanted
+for (k in 1:nsite){
+# #option for if we have raw data for each site
+  #germRate[k] ~ binomial (germinants[k], seeds[k])
+  #need to keep the next line positive, either lognormal or log the vals
+  logMuBackground[k]~normal (muBackground, taoBackground) #mean background emergence rate, varisLogclace
+  muBackground[k]<-exp(logMuBackground[k])
+  bscarT[k]~normal (muScarT, taoScarT)) #mean scarTvarislogscale
+  aSite[k]~normal(muEmerge, tauEmerge) # baseline success rate, logscale
+}
 
-#trials follows as above
-
-numBackground[plot] ~ poisson (muBackground[site])
-
-#need to keep the next line positive, either lognormal or log the vals
-muBackground[site]~exp(normal (loggrandmeanbackground, precisionbackground))
-
-#site variables
-aSite~normal(musite, precisionemergenceintercept) # baseline success rate
-bscarification~normal(mubetsite, precisionscarification)
 
 #priors
-precisionemergenceintercept=1/sigma_emergence*sigma_emergence
-sigma_emergence<-dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
+sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
 
-precisionscarification=1/sigma_scarification*sigma_scarification
-sigma_scarification<-dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+taoScarT<-1/(sigmaScarT*sigmaScarT)
+sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
 
-precisionbackground=1/sigma_background*sigma_background
-sigma_background<-dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+taoBackground<-1/sigmaBackground*sigmaBackground
+sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
 
-
-
-musite~normal (0,100)
-mubetsite~normal (0,100)
-loggrandmeanbackground ~normal (0,100)
+muEmerge~normal (0,100)
+muScarT~normal (0,100)
+muBackground~normal (0,100)
 
 
 
+# #poisson option, trials same as below
+# numTrtRecruit[trt==seeded]~poisson (muRecruit)
+# muRecruit=exp(log(trials)+aSite[site[i]+bscarifcation[site[i]*scarifiation[plot[i]]]]) # could add in extra poisson resid variation here if wanted
 
 
-numBackground~poisson(sitex)
+
