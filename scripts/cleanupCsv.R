@@ -18,6 +18,10 @@ siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
 plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
 
+#manuall strip white
+plotData$site[plotData$site=="12 Mile "]<-'12 Mile'
+plotData$exp.seedling.sp[plotData$exp.seedling.sp=="  "]<-NA
+plotData$exp.seedling.sp[plotData$exp.seedling.sp==" "]<-NA
 
 #Convert all genus species to the same format
 
@@ -52,6 +56,10 @@ plotData$zone[plotData$zone=="Alpine" & !is.na(plotData$zone)]<-"AT"
 plotData$zone[plotData$zone=="Forest" & !is.na(plotData$zone)]<-"F"
 plotData$zone[plotData$zone=="Treeline" & !is.na(plotData$zone)]<-"T"
 plotData$zone[plotData$zone=="FT" & !is.na(plotData$zone)]<-"T" #???????????????? (sites are TexasCreek and Blowdown)
+
+#add provenence data for 12 Mile site (GET THIS INFO FROM BECKY AND TERESA!)
+plotData$provenance[plotData$site=="12 Mile" & plotData$transect %in% c(1,2)]<-"high"
+plotData$provenance[plotData$site=="12 Mile" & plotData$transect %in% c(3,4)]<-"low"
 
 #change CTL to CN
 
@@ -194,10 +202,7 @@ unique(plotData$site[!is.na(plotData$exp.seedling.count.y2)])
 #Fill in the seeded spp to plotData where not there already
 siteSpecies<-unique(siteData[,c('site', 'sp.seeded')])
 
-plotData$site[plotData$site=="12 Mile "]<-'12 Mile'
-plotData$exp.seedling.sp[plotData$exp.seedling.sp=="  "]<-NA
-plotData$exp.seedling.sp[plotData$exp.seedling.sp==" "]<-NA
-" " 
+
 #save full copy incase you want full set back
 bu<-plotData
 #NOTE IGNORED STEVE'S SITES DUE TO MULTISEEDING CONFUSION
