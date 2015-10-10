@@ -22,6 +22,10 @@ plotDatasub$seedT[plotDatasub$treatment %in% c("SD","SS","PSS")]<-1 #need this t
 plotDatasub$scarT<-0
 plotDatasub$scarT[plotDatasub$treatment %in% c("SC","SS","PSS","PSC")]<-1 #per plot
 
+#seeds added
+unique(siteData[,c("site","seeds.per.plot")])
+plotDatasub$seeds.per.plot<-siteData$seeds.per.plot[match(plotDatasub$site,siteData$site)] #MAKE SURE TO FIX THIS PER SPECIES WHEN WE DO THIS FOR REAL!
+
 #take only the first year seeded and only non-herbivory treatment for Davos
 plotDatasub<-plotDatasub[c(plotDatasub$site=="Davos" & c(plotDatasub$start.year==2014 | plotDatasub$provenance=="low" | plotDatasub$herb.treat=="ex"))==FALSE,]
 
@@ -32,7 +36,7 @@ plotDatasub<-plotDatasub[plotDatasub$zone=="AT",]
 #list of unique plots with the associated site number also with scarT 
 
 #make up germination rate data but replace this will real data later
-germRate<-setNames(as.data.frame(cbind(c(seq(0,length(unique(plotDatasub$site)),by=1)),c(runif(length(unique(plotDatasub$site)),0,1)))),c("siteNum","germRate"))
+germRate<-setNames(as.data.frame(cbind(c(seq(1,length(unique(plotDatasub$site)),by=1)),c(runif(length(unique(plotDatasub$site)),0,1)))),c("siteNum","germRate"))
 
 
 #For JAGS
@@ -40,22 +44,24 @@ germRate<-setNames(as.data.frame(cbind(c(seq(0,length(unique(plotDatasub$site)),
 plotDatasub$siteNum<-as.numeric(as.factor(plotDatasub$site))
 plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
 
-plots<-unique(plotDatasub[,c("siteNum","uniquePlotNum","seedT","scarT")])
+#plots<-unique(plotDatasub[,c("siteNum","uniquePlotNum","seedT","scarT")])
 
 jags.dat<-list(
-  y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only (in that plot)
+  #y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only (in that plot)
+  y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
   nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
   n=nrow(plotDatasub),
   germRate=germRate$germRate, # make up a number between zero and 1 for each site (length of the number of sites)
   siteData=germRate$siteNum, #one value indicating site to go with germ Rate
-  seedT=plots$seedT,
-  scarT=plots$scarT,
-  sitePlot=plots$siteNum, #vector indicating site, length of the total number of unique plots
-  #numSeeded
+  seedT=plotDatasub$seedT,
+  scarT=plotDatasub$scarT,
+  sitePlot=plotDatasub$siteNum, #vector indicating site, length of the total number of unique plots
+  numSeeded=plotDatasub$seeds.per.plot, #fix this to be the proper number PER SPECIES/PROVENANCE
+  plot=plotDatasub$uniquePlotNum
   )
 
-
+str(jags.dat)
 
 
 #numAdded = 100
@@ -78,7 +84,7 @@ write("
 for (i in 1:n){ #i indexes over data rows
   y[i] <-numTrtRecruitALL[i] + numBackground[i] #mixture
   numTrtRecruitALL[i]<-numTrtRecruit[i]*seedT[i] #this will cause the numTrtRecruit not to enter the likelihood for the nonseeded plots
-  numTrtRecruit[i]~binomial (emergRate[plot[i]], trials[i]) 
+  numTrtRecruit[i]~dbinom(emergRate[plot[i]], trials[i]) 
   trials[i]<-numSeeded[i]*germRate[siteData[i]]
 }
 
@@ -86,18 +92,18 @@ for (i in 1:n){ #i indexes over data rows
 #need a vector of scarT (1,0) for each plot
 for (j in 1:nplot){
   emergRate[j]<-invlogit(aSite[sitePlot[j]]+bscarT[sitePlot[j]*scarT[j]])
-  numBackground[j] ~ poisson (muBackground[sitePlot[j])
+  numBackground[j] ~ dpois(muBackground[sitePlot[j]])
 }
 
 
 for (k in 1:nsite){
 # #option for if we have raw data for each site
-  #germRate[k] ~ binomial (germinants[k], seeds[k])
+  #germRate[k] ~ dbinom(germinants[k], seeds[k])
   #need to keep the next line positive, either lognormal or log the vals
-  logMuBackground[k]~normal (muBackground, taoBackground) #mean background emergence rate, varisLogclace
+  logMuBackground[k]~dnorm(muBackground, taoBackground) #mean background emergence rate, varisLogclace
   muBackground[k]<-exp(logMuBackground[k])
-  bscarT[k]~normal (muScarT, taoScarT)) #mean scarTvarislogscale
-  aSite[k]~normal(muEmerge, tauEmerge) # baseline success rate, logscale
+  bscarT[k]~dnorm(muScarT, taoScarT) #mean scarTvarislogscale
+  aSite[k]~dnorm(muEmerge, tauEmerge) # baseline success rate, logscale
 }
 
 
@@ -124,8 +130,19 @@ muBackground~normal (0,100)
       }
       ","gtree_y1germ.jags")
 
-inits<-list()
-  
-params<-c()
+initsA<-list(muBackground=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
 
-modout.allsp<-jags(jags.dat,inits, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=1000,n.burnin=500, n.thin=2, DIC=FALSE, working.directory=NULL, progress.bar = "text") 
+initsB<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
+
+initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
+
+inits<-list(initsA,initsB,initsC)
+
+
+inits<-NA
+list()
+  
+params<-c('muBackground')
+library(rjags)
+library(R2jags)
+modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=1000,n.burnin=500, n.thin=2, DIC=FALSE, working.directory=NULL, progress.bar = "text") 
