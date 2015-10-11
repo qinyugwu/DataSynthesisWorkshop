@@ -13,6 +13,8 @@
 # sort out what the F FT is for zones
 # work out what to do with the NAs by checking everyone's spreadsheets
 # work with y2 data - that is totally ignored thus far, and is currently reading as a logical
+# still a bunch of NAs in the nat seedling cts and expt seedling cts - what is this?
+
 
 siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
@@ -210,14 +212,11 @@ plotData$exp.seedling.sp[is.na(plotData$exp.seedling.sp)]<-plotData$sp.seeded[is
 
 #HIGH RISK, WE SHOULD DOUBLE CHECK THE NA SPREADSHEET
 #THIS IS MORE COMPLICATED FOR YEAR 2 - some did NOT SURVEY
-plotData$nat.seedling.count.y0[is.na(plotData$nat.seedling.count.y0)]<-'0'
-plotData$nat.seedling.count.y1[is.na(plotData$nat.seedling.count.y1)]<-'0'
+plotData$nat.seedling.count.y0[is.na(plotData$nat.seedling.count.y0)]<-0
+plotData$nat.seedling.count.y1[is.na(plotData$nat.seedling.count.y1)]<-0
 
-plotData$exp.seedling.count.y0[is.na(plotData$exp.seedling.count.y0)]<-'0'
-plotData$exp.seedling.count.y1[is.na(plotData$exp.seedling.count.y1)]<-'0'
-
-
-
+#plotData$exp.seedling.count.y0[is.na(plotData$exp.seedling.count.y0)]<-0
+plotData$exp.seedling.count.y1[is.na(plotData$exp.seedling.count.y1)]<-0
 
 #make a total column which is the sum of expseedling cts plus natural 
 #seedling counts OF THE CORRECT species
@@ -237,7 +236,12 @@ for (i in 1:nrow(plotData)){
 unique(plotData$nat.seedling.count.y1[plotData$treatment%in%c('SC','CN')&
                                         plotData$nat.seedling.sp.y1==plotData$exp.seedling.sp])
 
+#write out files
+write.csv (plotData, 'Data/cleanData/plotDataClean.csv', row.names=F)
+write.csv (siteData, 'Data/cleanData/siteDataClean.csv', row.names=F)
 
+
+#more checking
 
 #run nodata only on Sarah's computer
 if (getwd()=="C:/Users/selmendorf/Documents/GTREE/DataSynthesisWorkshop"){
