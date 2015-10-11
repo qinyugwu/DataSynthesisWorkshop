@@ -28,7 +28,7 @@ plotDatasub$seedT<-0
 plotDatasub$seedT[plotDatasub$treatment %in% c("SD","SS","PSS")]<-1 #need this to be per plot
 
 plotDatasub$scarT<-0
-plotDatasub$scarT[plotDatasub$treatment %in% c("SC","SS","PSS","PSC")]<-1 #per plot
+plotDatasub$scarT[plotDatasub$treatment %in% c("SC","SS","PSC")]<-1 #per plot
 
 #seeds added
 unique(siteData[,c("site","seeds.per.plot")])
