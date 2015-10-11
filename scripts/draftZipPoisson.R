@@ -132,8 +132,8 @@ modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", 
 print(modout.gtree)
 plot(modout.gtree)
 
-
-coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','97.5%')])
+coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','50%','97.5%')])
+overDisp<-coefsout$`50%`[rownames(coefsout)=="Dispersion"]/(jags.dat$n-3) #Dispersion/N-k where k= # of reg params and N is sample size
 coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 1))
 coefsout$siteNum<-gsub("\\D","",  rownames(coefsout)) #add in sitenumber
 coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
