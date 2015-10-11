@@ -5,7 +5,10 @@ head(plotDatasub,1)
 
 library(lme4)
 
-m1.graph<-glmer(exp.seedling.count.y1~as.factor(seedT)*as.factor(scarT)+(1|site),family="poisson",data=plotDatasub,control=glmerControl(optimizer="bobyqa"))
+m1.graph<-glmer(tot.emerge.y1~seedT*scarT+(1|site),family="poisson",data=plotDatasub[plotDatasub$site %in% c("12 Mile","Brooks")==FALSE,],control=glmerControl(optimizer="Nelder_Mead"))
+
+source(system.file("utils", "allFit.R", package="lme4"))
+allFit(glmer(tot.emerge.y1~seedT*scarT+(1|site),family="poisson",data=plotDatasub,control=glmerControl(optimizer="Nelder_Mead")))
 
 summary(m1.graph)
 plot(m1.graph)
