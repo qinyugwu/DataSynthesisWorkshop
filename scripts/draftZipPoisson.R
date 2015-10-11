@@ -146,12 +146,15 @@ coefsout$siteNum<-gsub("\\D","",  rownames(coefsout)) #add in sitenumber
 coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
 
 
-ggplot(coefsout[coefsout$Type %in% c("bscarT"),])+
-  geom_point(aes(x=site,y=mean),size=6)+
-  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`),width=0.18,size=1.8)+
+plot.Teff<-ggplot(coefsout[coefsout$Type %in% c("bscarT","bseedT"),])+
+  geom_point(aes(x=site,y=mean,colour=Type),size=6,position=position_dodge(width=0.5))+
+  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=Type),width=0.18,size=1.8,position=position_dodge(width=0.5))+
   geom_hline(yintercept=0,linetype="dotted")+
-  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=0.19676482,ymin=-0.18679486),alpha=0.2,fill="red")+
-  theme_bw()+xlab("\nSITE")+ylab("Treatment Effect\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=2.582,ymin=-2.101),alpha=0.2,fill="orange")+
+  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=8.834,ymin=2.360),alpha=0.2,fill="blue")+
+  theme_bw()+xlab("\nSITE")+ylab("Treatment Effect Coefficient\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+
+ggsave(plot.Teff,filename = "figures/treatment_effect_poisson.pdf")
 
 ggplot(coefsout[coefsout$Type %in% c("muBackgroundsite"),])+
   geom_point(aes(x=site,y=mean),size=6)+
