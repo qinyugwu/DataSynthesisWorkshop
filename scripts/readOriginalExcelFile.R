@@ -9,8 +9,12 @@
 library (xlsx)
 siteData<-read.xlsx('Background/GTREE_Master_30Sept2015.xlsx',sheetName='SiteData',
                     fileEncoding='latin1')
+siteData<-siteData[siteData$site!='',]
+siteData<-siteData[!is.na(siteData$site),]
 plotData<-read.xlsx('Background/MASTER_GTREE_11Oct2015.xlsx',sheetName='Sheet1',
                     fileEncoding='latin1')
+plotData<-plotData[plotData$site!='',]
+plotData<-plotData[!is.na(plotData$site),]
 
 
 source('scripts/rem_specialChars.R')
