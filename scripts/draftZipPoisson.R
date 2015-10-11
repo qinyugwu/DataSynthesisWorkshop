@@ -134,7 +134,7 @@ params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","a
 
 library(rjags)
 library(R2jags)
-modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=1000,n.burnin=20, n.thin=2, DIC=FALSE, working.directory=NULL, progress.bar = "text")
+modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=10000,n.burnin=1000, n.thin=10, DIC=FALSE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
 plot(modout.gtree)
@@ -142,10 +142,9 @@ plot(modout.gtree)
 
 coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','97.5%')])
 coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 1))
-coefsout$siteNum<-as.vector(c(rep(1:10,2),NA,NA,rep(1:10,1),rep(NA,7)))
+coefsout$siteNum<-gsub("\\D","",  rownames(coefsout)) #add in sitenumber
 coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
 
-head(coefsout)
 
 ggplot(coefsout[coefsout$Type %in% c("bscarT"),])+
   geom_point(aes(x=site,y=mean),size=6)+
