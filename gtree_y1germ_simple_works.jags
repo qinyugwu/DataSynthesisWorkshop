@@ -1,0 +1,67 @@
+
+      model{
+#need different background rates for scarified and not scarified treatments
+#difference in background rate for scarified and not scarified plots (both not seeded)
+for (i in 1:n){ #i indexes over data rows
+  y[i]~dpois(mu[i])
+  mu[i]<-exp(aSite[siteData[i]]+bscarT[siteData[i]]*scarT[i]+bseedT[siteData[i]]*seedT[i])
+
+#Discrepancy measures
+#   yNew[i]~dpois(mu[i])
+#   PRes[i]<-(y[i]-mu[i])/sqrt(mu[i])
+#   PResNew[i]<-(yNew[i]-mu[i])/sqrt(mu[i])
+#   D[i]<-(Pres[i]*Pres[i])
+#   DNew[i]<-(PResNew[i]*PResNew[i])
+#   ExpY[i]<-exp(eta[i])*exp(sigma2.site/2)
+# 
+# VarY[i]<-exp(eta[i])*(exp(eta[i])*(exp(sigma2.site)-1)*exp(sigma2.site)+exp(sigma2.site/2))
+# PResEQ[i]<-(y[i]-ExpY[i])/sqrt(VarY[i])
+# Disp1[i]<-(PresEQ[i]*PresEQ[i])
+
+}
+
+# Dispersion<-sum(Disp1) #[]?
+# Fit<-sum(Fiti)
+# FitNew<-sum(FitiNew)
+
+
+for (k in 1:nsite){
+  bscarT[k]~dnorm(muScarT, tauScarT) #mean scarTvarislogscale
+  aSite[k]~dnorm(muEmerge, tauEmerge) # baseline success rate, logscale
+  bseedT[k]~dnorm(muSeedT, tauSeedT)
+}
+
+
+#priors
+tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
+sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+
+tauScarT<-1/(sigmaScarT*sigmaScarT)
+sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+
+tauSeedT<-1/(sigmaSeedT*sigmaSeedT)
+sigmaSeedT~dunif (0,10) 
+
+#taoBackground<-1/sigmaBackground*sigmaBackground
+#sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+
+muEmerge~dnorm(0,0.0001)
+muScarT~dnorm(0,0.0001)
+#muBackground~dnorm(0,0.0001)
+muSeedT~dnorm(0,0.0001)
+
+
+#Derived
+
+# for (i in 1:nsite){
+#   bscarTBT[i]<-exp(bscarT[i])
+#   bseedTBT[i]<-exp(bseedT[i])
+# }
+# 
+# muBackgroundBT<-exp(muBackground)
+# muEmergeBT<-exp(muEmerge)
+# muScarTBT<-exp(muScarT)
+# muSeedTBT<-exp(muSeedT)
+
+      }
+      
