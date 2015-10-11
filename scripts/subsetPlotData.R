@@ -4,6 +4,7 @@
 
 #ISSUES - nearly all needs to be redone once the final data are prepared,
 #we threw out a lot.
+#ALSO WE COMBINED THE TWO SCARIFICATION TREATMENTS INTO ONE
 
 plotData <-read.csv ('Data/cleanData/plotDataClean.csv')
 siteData <-read.csv ('Data/cleanData/siteDataClean.csv')
