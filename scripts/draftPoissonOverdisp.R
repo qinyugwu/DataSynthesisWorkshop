@@ -140,6 +140,8 @@ modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ_overdis
 print(modout.gtree)
 plot(modout.gtree)
 
+mean(modout.gtree$BUGSoutput$sims.list$FitNew>modout.gtree$BUGSoutput$sims.list$Fit)
+
 coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','50%','97.5%')])
 overDisp<-coefsout$`50%`[rownames(coefsout)=="Dispersion"]/(jags.dat$n-3) #Dispersion/N-k where k= # of reg params and N is sample size
 coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 1))
