@@ -12,7 +12,7 @@ plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
 #plots<-unique(plotDatasub[,c("siteNum","uniquePlotNum","seedT","scarT")])
 
 jags.dat<-list(
-  y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only 
+  y=plotDatasub$germ.y1, # number of naturally occuring + germinated for species of interest only 
   #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
   #nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
@@ -139,7 +139,7 @@ library(rjags)
 library(R2jags)
 modout.gtree<-jags(jags.dat,inits=NULL, params, 
                    model.file="gtree_y1germ_overdisp.jags",
-                   n.chains=3,n.iter=1000,n.burnin=100, n.thin=10,
+                   n.chains=3,n.iter=10000,n.burnin=1000, n.thin=10,
                    DIC=TRUE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
@@ -179,10 +179,17 @@ ggplot(coefsout[coefsout$Type %in% c("aSite"),])+
   theme_bw()+xlab("\nSITE")+ylab("Background Germination Number\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
 
 
-# OVERDISPERSED, NO INTERACTION ---------
+# OVERDISPERSED, WITH INTERACTION ---------
+
+plotDatasub$seeds.per.plot[plotDatasub$site=="Craigieburn"]<-150
+plotDatasub$seeds.per.plot[plotDatasub$site=="Tess\xf3"]<-300
+plotDatasub$seeds.per.plot[plotDatasub$site=="TexasCreek"]<-100
+
+plotDatasub$siteNum<-as.numeric(as.factor(as.character(plotDatasub$site)))
+plotDatasub$uniquePlotNum<-as.numeric(as.factor(as.character(plotDatasub$uniquePlot)))
 
 jags.dat<-list(
-  y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only 
+  y=plotDatasub$germ.y1, # number of naturally occuring + germinated for species of interest only 
   #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
   #nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
@@ -195,6 +202,8 @@ jags.dat<-list(
   #plot=plotDatasub$uniquePlotNum,
   siteData=plotDatasub$siteNum
 )
+
+str(jags.dat)
 
 write("
       model{
@@ -300,7 +309,7 @@ library(rjags)
 library(R2jags)
 modout.gtree<-jags(jags.dat,inits=NULL, params, 
                    model.file="gtree_y1germ_overdisp_interact.jags",
-                   n.chains=3,n.iter=10000,n.burnin=6000, n.thin=10,
+                   n.chains=3,n.iter=10000,n.burnin=600, n.thin=100,
                    DIC=TRUE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
@@ -322,7 +331,8 @@ coefsout.asite$scarT<-c(rep(1,jags.dat$nsite*2),rep(2,jags.dat$nsite*2))
 coefsout.asite$site<-plotDatasub$site[match(coefsout.asite$siteNum,plotDatasub$siteNum)]
 
 coefsout.asiteBT<-coefsout[coefsout$Type=="aSiteBT",]
-coefsout.asiteBT$siteNum<-c(rep(1:jags.dat$nsite,each=4))
+#coefsout.asiteBT$siteNum<-c(rep(1:jags.dat$nsite,each=4))
+coefsout.asiteBT$siteNum<-c(rep(1,4),rep(10:15,each=4),rep(2:9,each=4))
 coefsout.asiteBT$seedT<-c(rep(1:2,each=2,times=jags.dat$nsite))
 coefsout.asiteBT$scarT<-c(rep(1:2,each=1,times=(jags.dat$nsite*2)))
 coefsout.asiteBT$site<-plotDatasub$site[match(coefsout.asiteBT$siteNum,plotDatasub$siteNum)]
@@ -337,7 +347,7 @@ coefsout.asiteBT<-rbind(coefsout.asiteBT,coefsout.muEmergeBT)
 
 plot.Teff<-ggplot(coefsout.asiteBT)+
   geom_hline(yintercept=0,linetype="dotted")+
-  geom_point(aes(x=site,y=mean,colour=factor(seedT):factor(scarT)),size=6,position=position_dodge(width=0.5))+
+  geom_point(aes(x=site,y=`50%`,colour=factor(seedT):factor(scarT)),size=6,position=position_dodge(width=0.5))+
   geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=factor(seedT):factor(scarT)),width=0.18,size=1.8,position=position_dodge(width=0.5))+scale_colour_manual(values=c("black","orange","blue","darkgreen"),name="Treatment",breaks=c("1:1","1:2","2:1","2:2"),labels=c("control","scarified","seeded","seeded+scarified"))+
   theme_bw()+xlab("\nSITE")+ylab("Treatment Effect Coefficient\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=20,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
 
