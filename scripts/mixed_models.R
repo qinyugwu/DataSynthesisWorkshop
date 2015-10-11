@@ -1,10 +1,11 @@
 # Mixed models
 
+plotDatasub<-read.csv(file="data/subsets/plotDatasub.csv",stringsAsFactors=FALSE)
 head(plotDatasub,1)
 
 library(lme4)
 
-m1.graph<-glmer(exp.seedling.count.y1~as.factor(seedT)+as.factor(scarT)+(1|site),family="poisson",data=plotDatasub,control=glmerControl(optimizer="bobyqa"))
+m1.graph<-glmer(exp.seedling.count.y1~as.factor(seedT)*as.factor(scarT)+(1|site),family="poisson",data=plotDatasub,control=glmerControl(optimizer="bobyqa"))
 
 summary(m1.graph)
 plot(m1.graph)
