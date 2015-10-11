@@ -18,8 +18,10 @@
 
 siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
-plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
+#changed to read the plotData directly
+plotData<-read.csv('Data/plotData.csv', fileEncoding='latin1',stringsAsFactors=F,
                    strip.white=T)
+plotData<-plotData[plotData$site!='',]
 
 #replace blanks with NA in exp.seedling.sp
 plotData$exp.seedling.sp[plotData$exp.seedling.sp==""]<-NA
@@ -189,53 +191,52 @@ sapply(siteData[,i], maxfunction)
 
 rm(i)#cleanup
 
-#head (plotData)
-
-unique(plotData$site[!is.na(plotData$exp.seedling.count.y2)])
-#put the total count back into a single column?
-
-#Fill in the seeded spp to plotData where not there already
-siteSpecies<-unique(siteData[,c('site', 'sp.seeded')])
-
-#save full copy incase you want full set back
-bu<-plotData
-#NOTE IGNORED STEVE'S SITES DUE TO MULTISEEDING CONFUSION
-plotData<-merge(bu[!bu$site%in%(c('Churchill, MB',
-                                  'Wolf Creek, YK',
-                                  'Canol Trail, NWT')),], siteSpecies, all.x=T)
-
-plotData$exp.seedling.sp[is.na(plotData$exp.seedling.sp)]<-plotData$sp.seeded[is.na(plotData$exp.seedling.sp)]
-
-#check all filled
-#unique (plotData$exp.seedling.sp)
-
-#HIGH RISK, WE SHOULD DOUBLE CHECK THE NA SPREADSHEET
-#THIS IS MORE COMPLICATED FOR YEAR 2 - some did NOT SURVEY
-plotData$nat.seedling.count.y0[is.na(plotData$nat.seedling.count.y0)]<-0
-plotData$nat.seedling.count.y1[is.na(plotData$nat.seedling.count.y1)]<-0
-
-#plotData$exp.seedling.count.y0[is.na(plotData$exp.seedling.count.y0)]<-0
-plotData$exp.seedling.count.y1[is.na(plotData$exp.seedling.count.y1)]<-0
-
-#make a total column which is the sum of expseedling cts plus natural 
-#seedling counts OF THE CORRECT species
-for (i in 1:nrow(plotData)){
-  plotData$tot.emerge.y1[i]<-plotData$exp.seedling.count.y1[i]
-  #assume that nonseeded plots with NA in expt seedling didn't write them in here
-#   if (plotData$treatment[i]%in%c('SC', 'CN', 'PSC')&is.na(plotData$tot.emerge.y1[i])){
-#     plotData$tot.emerge.y1[i]<-0    
+#THIS PART NO LONGER NECESSARY WITH ANDREW'S COUNTS??
+# #head (plotData)
+# 
+# unique(plotData$site[!is.na(plotData$exp.seedling.count.y2)])
+# #put the total count back into a single column?
+# 
+# #Fill in the seeded spp to plotData where not there already
+# siteSpecies<-unique(siteData[,c('site', 'sp.seeded')])
+# 
+# #save full copy incase you want full set back
+# bu<-plotData
+# 
+# plotData<-merge(bu, siteSpecies, all.x=T)
+# 
+# plotData$exp.seedling.sp[is.na(plotData$exp.seedling.sp)]<-plotData$sp.seeded[is.na(plotData$exp.seedling.sp)]
+# 
+# #check all filled
+# #unique (plotData$exp.seedling.sp)
+# 
+# #HIGH RISK, WE SHOULD DOUBLE CHECK THE NA SPREADSHEET
+# #THIS IS MORE COMPLICATED FOR YEAR 2 - some did NOT SURVEY
+# plotData$nat.seedling.count.y0[is.na(plotData$nat.seedling.count.y0)]<-0
+# plotData$nat.seedling.count.y1[is.na(plotData$nat.seedling.count.y1)]<-0
+# 
+# #plotData$exp.seedling.count.y0[is.na(plotData$exp.seedling.count.y0)]<-0
+# plotData$exp.seedling.count.y1[is.na(plotData$exp.seedling.count.y1)]<-0
+# 
+# #make a total column which is the sum of expseedling cts plus natural 
+# #seedling counts OF THE CORRECT species
+# for (i in 1:nrow(plotData)){
+#   plotData$tot.emerge.y1[i]<-plotData$exp.seedling.count.y1[i]
+#   #assume that nonseeded plots with NA in expt seedling didn't write them in here
+# #   if (plotData$treatment[i]%in%c('SC', 'CN', 'PSC')&is.na(plotData$tot.emerge.y1[i])){
+# #     plotData$tot.emerge.y1[i]<-0    
+# #   }
+#   #add in the nat.seedling.count if the species matches that which was added
+#   if (!is.na(plotData$nat.seedling.count.y1[i])&!is.na(plotData$nat.seedling.sp.y1[i])){
+#     toadd<-0 # to make sure
+#     toadd<-plotData$nat.seedling.count.y1[i]*
+#       ifelse(plotData$nat.seedling.sp.y1[i]==plotData$exp.seedling.sp[i],1,0)
+#     plotData$tot.emerge.y1[i]<-plotData$tot.emerge.y1[i]+toadd
 #   }
-  #add in the nat.seedling.count if the species matches that which was added
-  if (!is.na(plotData$nat.seedling.count.y1[i])&!is.na(plotData$nat.seedling.sp.y1[i])){
-    toadd<-0 # to make sure
-    toadd<-plotData$nat.seedling.count.y1[i]*
-      ifelse(plotData$nat.seedling.sp.y1[i]==plotData$exp.seedling.sp[i],1,0)
-    plotData$tot.emerge.y1[i]<-plotData$tot.emerge.y1[i]+toadd
-  }
-}
-
-unique(plotData$nat.seedling.count.y1[plotData$treatment%in%c('SC','CN')&
-                                        plotData$nat.seedling.sp.y1==plotData$exp.seedling.sp])
+# }
+# 
+# unique(plotData$nat.seedling.count.y1[plotData$treatment%in%c('SC','CN')&
+#                                         plotData$nat.seedling.sp.y1==plotData$exp.seedling.sp])
 
 #write out files
 write.csv (plotData, 'Data/cleanData/plotDataClean.csv', row.names=F)
