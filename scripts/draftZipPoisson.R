@@ -122,11 +122,12 @@ initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$
 inits<-list(initsA,initsB,initsC)
 
   
-params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT")
+params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Disp1",
+          "Dispersion")
 
 library(rjags)
 library(R2jags)
-modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=10000,n.burnin=1000, n.thin=10, DIC=FALSE, working.directory=NULL, progress.bar = "text")
+modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=1000,n.burnin=100, n.thin=10, DIC=FALSE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
 plot(modout.gtree)
