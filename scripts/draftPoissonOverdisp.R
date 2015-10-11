@@ -135,7 +135,10 @@ params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT",
 
 library(rjags)
 library(R2jags)
-modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ_overdisp.jags", n.chains=3,n.iter=1000,n.burnin=100, n.thin=10, DIC=TRUE, working.directory=NULL, progress.bar = "text")
+modout.gtree<-jags(jags.dat,inits=NULL, params, 
+                   model.file="gtree_y1germ_overdisp.jags",
+                   n.chains=3,n.iter=1000,n.burnin=100, n.thin=10,
+                   DIC=TRUE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
 plot(modout.gtree)
