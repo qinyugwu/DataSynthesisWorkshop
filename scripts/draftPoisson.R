@@ -186,9 +186,8 @@ write("
       y[i]~dpois(mu[i])
       log(mu[i])<-max(-20,min(20,eta[i]))
       eta[i]<-log(trials[i])+aSite[siteData[i]]+bscarT[siteData[i]]*scarT[i]+bseedT[siteData[i]]*seedT[i]+
-      +bSeedTscarT[siteData[i]]*seedT[i]*scarT[i]
+      bSeedTscarT[siteData[i]]*seedT[i]*scarT[i]
 
-#+a[i]
       trials[i]<-numSeeded[i]*germRate[siteData[i]] #make this not fixed? 
       
       #Discrepancy measures
@@ -240,13 +239,19 @@ write("
       muSeedTscarT~dnorm(0,0.0001)
       
       #Derived
-      
-      for (i in 1:nsite){
-      bscarTBT[i]<-exp(bscarT[i])
-      bseedTBT[i]<-exp(bseedT[i])
-      bseedTscarTBT[i]<-exp(bseedTscarT[i])
+      #estimates at each site
+      for (k in 1:nsite){
+        ctlSite[k]<-exp(aSite[k])
+        seedSite[k]<-exp(aSite[k]+bseedT[k])
+        scarSite[k]<-exp(aSite[k]+bscarT[k])
+        seedscarSite[k]<-exp(aSite[k]+bscarT[k]+bseedT[k]+bSeedTscarT[k])
       }
       
+      ctl<-exp(muEmerge)
+      scar<-exp(muEmerge+muScarT)
+      seed<-exp(muEmerge+muSeedT)
+      both<-exp(muEmerge+muSeedT+muScarT+muSeedTscarT)
+
       #muBackgroundBT<-exp(muBackground)
       muEmergeBT<-exp(muEmerge)
       muScarTBT<-exp(muScarT)
@@ -263,33 +268,54 @@ write("
 # 
 # inits<-list(initsA,initsB,initsC)
 
-
+#This works:
 params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT",
-          "bseedTscarT",
-          "aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Disp1",
-          "Dispersion","Fit", "FitNew")
+          "bSeedTscarT","muSeedTscarT",
+          "aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Dispersion",
+          "Fit", "FitNew", "ctl", "seed","scar", "both", "ctlSite", "seedSite",
+          "scarSite", "seedscarSite")
+
+#This doesn't work'
+params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT",
+          "bSeedTscarT","muSeedTscarT",
+          "aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Dispersion",
+          "Fit", "FitNew", "ctl", "seed","scar", "both", "ctlSite", "seedSite",
+          "scarSite", "seedscarSite", "sigmaSeedTScarT")
 
 library(rjags)
 library(R2jags)
-modout.gtree<-jags(jags.dat,inits=NULL, params, 
-                   model.file="gtree_y1germ.jags",
-                   n.chains=3,n.iter=1000,n.burnin=100,
+modout.gtree.interaction<-jags(jags.dat,inits=NULL, params, 
+                   model.file="gtree_y1germ_interact.jags",
+                   n.chains=3,n.iter=10000,n.burnin=1000,
                    n.thin=10, DIC=TRUE, working.directory=NULL,
                    progress.bar = "text")
 
-print(modout.gtree)
-plot(modout.gtree)
+print(modout.gtree.interaction)
+plot(modout.gtree.interaction)
 
 
 #Baesiant p value suggests that this is a craptastic model
 #You want it to be close to 0.50
-mean(modout.gtree$BUGSoutput$sims.list$FitNew>modout.gtree$BUGSoutput$sims.list$Fit)
+mean(modout.gtree.interaction$BUGSoutput$sims.list$FitNew>modout.gtree.interaction$BUGSoutput$sims.list$Fit)
 
-coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','50%','97.5%')])
+coefsout<-as.data.frame(modout.gtree.interaction$BUGSoutput$summary[,c('mean','sd','2.5%','50%','97.5%')])
 overDisp<-coefsout$`50%`[rownames(coefsout)=="Dispersion"]/(jags.dat$n-3) #Dispersion/N-k where k= # of reg params and N is sample size
 coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 1))
 coefsout$siteNum<-gsub("\\D","",  rownames(coefsout)) #add in sitenumber
 coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
+
+
+plot.Pred<-ggplot(coefsout[coefsout$Type %in% c("ctlSite","scarSite", "seedSite", "seedscarSite"),])+
+  geom_point(aes(x=site,y=mean,colour=Type),size=6,position=position_dodge(width=0.5))+
+  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=Type),width=0.18,size=1.8,position=position_dodge(width=0.5))+
+  geom_hline(yintercept=0,linetype="dotted")+
+  #geom_ribbon(aes(x=as.numeric(factor(site)),ymax=2.582,ymin=-2.101),alpha=0.2,fill="orange")+
+  #geom_ribbon(aes(x=as.numeric(factor(site)),ymax=8.834,ymin=2.360),alpha=0.2,fill="blue")+
+  theme_bw()+xlab("\nSITE")+ylab("Treatment Effect Coefficient\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+
+ggsave(plot.Pred,filename = "figures/treatment_effect_poisson.pdf")
+
+
 
 
 plot.Teff<-ggplot(coefsout[coefsout$Type %in% c("bscarT","bseedT"),])+
@@ -301,6 +327,7 @@ plot.Teff<-ggplot(coefsout[coefsout$Type %in% c("bscarT","bseedT"),])+
   theme_bw()+xlab("\nSITE")+ylab("Treatment Effect Coefficient\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
 
 ggsave(plot.Teff,filename = "figures/treatment_effect_poisson.pdf")
+
 
 ggplot(coefsout[coefsout$Type %in% c("muBackgroundsite"),])+
   geom_point(aes(x=site,y=mean),size=6)+
