@@ -52,8 +52,10 @@ write("
       for (i in 1:n){ #i indexes over data rows
       y[i]~dpois(mu[i])
       log(mu[i])<-max(-20,min(20,eta[i]))
-      eta[i]<-log(trials[i])+aSite[siteData[i]]+bscarT[siteData[i]]*scarT[i]+bseedT[siteData[i]]*seedT[i] #+a[i]
+      eta[i]<-log(trials[i])+aSite[siteData[i]]+bscarT[siteData[i]]*scarT[i]+bseedT[siteData[i]]*seedT[i]+e[i]
       trials[i]<-numSeeded[i]*germRate[siteData[i]] #make this not fixed? 
+
+      e[i]~dnorm(0,tau.resid)
       
       #Discrepancy measures
       yNew[i]~dpois(mu[i])
@@ -85,6 +87,10 @@ write("
       
       
       #priors
+
+      tau.resid<-1/(sigmaResid*sigmaResid)
+      sigmaResid~dunif(0,10)
+
       tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
       sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
       
@@ -111,7 +117,7 @@ write("
       muSeedTBT<-exp(muSeedT)
       
       }
-      ","gtree_y1germ.jags")
+      ","gtree_y1germ_overdisp.jags")
 
 initsA<-list(muBackground=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
 
@@ -122,12 +128,11 @@ initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$
 inits<-list(initsA,initsB,initsC)
 
   
-params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Disp1",
-          "Dispersion")
+params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Disp1","sigmaResid","Dispersion","Fit","FitNew")
 
 library(rjags)
 library(R2jags)
-modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=1000,n.burnin=100, n.thin=10, DIC=FALSE, working.directory=NULL, progress.bar = "text")
+modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ_overdisp.jags", n.chains=3,n.iter=1000,n.burnin=100, n.thin=10, DIC=TRUE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
 plot(modout.gtree)
@@ -147,7 +152,7 @@ plot.Teff<-ggplot(coefsout[coefsout$Type %in% c("bscarT","bseedT"),])+
   geom_ribbon(aes(x=as.numeric(factor(site)),ymax=8.834,ymin=2.360),alpha=0.2,fill="blue")+
   theme_bw()+xlab("\nSITE")+ylab("Treatment Effect Coefficient\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
 
-ggsave(plot.Teff,filename = "figures/treatment_effect_poisson.pdf")
+ggsave(plot.Teff,filename = "figures/treatment_effect_poisson_overdisp.pdf")
 
 ggplot(coefsout[coefsout$Type %in% c("muBackgroundsite"),])+
   geom_point(aes(x=site,y=mean),size=6)+
