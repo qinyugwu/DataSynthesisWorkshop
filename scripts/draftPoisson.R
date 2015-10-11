@@ -276,17 +276,13 @@ params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT",
           "scarSite", "seedscarSite")
 
 #This doesn't work'
-params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT",
-          "bSeedTscarT","muSeedTscarT",
-          "aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Dispersion",
-          "Fit", "FitNew", "ctl", "seed","scar", "both", "ctlSite", "seedSite",
-          "scarSite", "seedscarSite", "sigmaSeedTScarT")
+params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","bSeedTscarT","muSeedTscarT","aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Dispersion","Fit", "FitNew", "ctl", "seed","scar", "both", "ctlSite", "seedSite","scarSite", "seedscarSite","sigmaSeedTScarT")
 
 library(rjags)
 library(R2jags)
 modout.gtree.interaction<-jags(jags.dat,inits=NULL, params, 
                    model.file="gtree_y1germ_interact.jags",
-                   n.chains=3,n.iter=10000,n.burnin=1000,
+                   n.chains=3,n.iter=1000,n.burnin=500,
                    n.thin=10, DIC=TRUE, working.directory=NULL,
                    progress.bar = "text")
 
