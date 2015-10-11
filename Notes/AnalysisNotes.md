@@ -1,5 +1,5 @@
 **Analysis notes**
-
+Ideas?
 - ZIPPoisson glmm with number seeded as on logoffset or binomial model
 - Code example for ZIPP is in Zuur Owl example, starting on p27
 - We think we might want to build both and check for model fit using diagnostics, either should fit the assumptions of the data but one has log transform one logit
@@ -22,5 +22,5 @@ Complications
 - Plot: site:zone:transect:plot EXCEPT for wolfcreek and canol trail and churchillMB- where we need to strip the species letter off the plot - double check with maika to figure out how she did it.
 - What todo with the 2 different years of seed addition for Davos
 
-
+What we've tried
 
