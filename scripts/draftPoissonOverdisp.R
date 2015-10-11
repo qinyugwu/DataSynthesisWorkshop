@@ -119,16 +119,19 @@ write("
       }
       ","gtree_y1germ_overdisp.jags")
 
-initsA<-list(muBackground=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
-
-initsB<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
-
-initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
-
-inits<-list(initsA,initsB,initsC)
+# initsA<-list(muBackground=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
+# 
+# initsB<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
+# 
+# initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
+# 
+# inits<-list(initsA,initsB,initsC)
 
   
-params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Disp1","sigmaResid","Dispersion","Fit","FitNew")
+params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT",
+          "aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Disp1",
+          "sigmaResid","Dispersion","Fit", "FitNew")
+
 
 library(rjags)
 library(R2jags)
