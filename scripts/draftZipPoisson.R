@@ -14,7 +14,7 @@ plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
 jags.dat<-list(
   y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only 
   #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
-  nplot=length(unique(plotDatasub$uniquePlotNum)),
+  #nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
   n=nrow(plotDatasub),
   germRate=runif (length(unique(plotDatasub$site)),0.6, 0.8), # make up a number between zero and 1 for each site (length of the number of sites)
@@ -130,12 +130,11 @@ initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$
 inits<-list(initsA,initsB,initsC)
 
   
-params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","muBackground", "sigmaBackground","bscarT","bseedT","aSite","muBackgroundsite","muEmergeBT","muBackgroundBT","muScarTBT","muSeedT","muSeedTBT")
-params<-c("muEmerge","sigmaEmerge")
+params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT")
 
 library(rjags)
 library(R2jags)
-modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=100,n.burnin=20, n.thin=2, DIC=FALSE, working.directory=NULL, progress.bar = "text")
+modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=1000,n.burnin=20, n.thin=2, DIC=FALSE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
 plot(modout.gtree)
