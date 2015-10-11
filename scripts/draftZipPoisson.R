@@ -12,17 +12,17 @@ plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
 #plots<-unique(plotDatasub[,c("siteNum","uniquePlotNum","seedT","scarT")])
 
 jags.dat<-list(
-  #y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only (in that plot)
-  y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
+  y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only 
+  #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
   nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
   n=nrow(plotDatasub),
-  germRate=germRate$germRate, # make up a number between zero and 1 for each site (length of the number of sites)
+  #germRate=germRate$germRate, # make up a number between zero and 1 for each site (length of the number of sites)
   #siteData=germRate$siteNum, #one value indicating site to go with germ Rate
   seedT=plotDatasub$seedT,
   scarT=plotDatasub$scarT,
-  sitePlot=plotDatasub$siteNum, #vector indicating site, length of the total number of unique plots
-  numSeeded=plotDatasub$seeds.per.plot, #fix this to be the proper number PER SPECIES/PROVENANCE
+  #sitePlot=plotDatasub$siteNum, #vector indicating site, length of the total number of unique plots
+  #numSeeded=plotDatasub$seeds.per.plot, #fix this to be the proper number PER SPECIES/PROVENANCE
   #plot=plotDatasub$uniquePlotNum,
   siteData=plotDatasub$siteNum
   )
@@ -48,72 +48,77 @@ write("
       model{
 #need different background rates for scarified and not scarified treatments
 #difference in background rate for scarified and not scarified plots (both not seeded)
-for (i in 1:n){ #i indexes over data rows
-  y[i]~dpois(mu[i])
-  mu[i]<-exp(aSite[siteData[i]]+bscarT[siteData[i]]*scarT[i]+bseedT[siteData[i]]*seedT[i]) #+a[i]
-
-#Discrepancy measures
-#   yNew[i]~dpois(mu[i])
-#   PRes[i]<-(y[i]-mu[i])/sqrt(mu[i])
-#   PResNew[i]<-(yNew[i]-mu[i])/sqrt(mu[i])
-#   D[i]<-(Pres[i]*Pres[i])
-#   DNew[i]<-(PResNew[i]*PResNew[i])
-#   ExpY[i]<-exp(eta[i])*exp(sigma2.site/2)
-# 
-# VarY[i]<-exp(eta[i])*(exp(eta[i])*(exp(sigma2.site)-1)*exp(sigma2.site)+exp(sigma2.site/2))
-# PResEQ[i]<-(y[i]-ExpY[i])/sqrt(VarY[i])
-# Disp1[i]<-(PresEQ[i]*PresEQ[i])
-
-}
-
-# Dispersion<-sum(Disp1) #[]?
-# Fit<-sum(Fiti)
-# FitNew<-sum(FitiNew)
-
-
-for (k in 1:nsite){
-  bscarT[k]~dnorm(muScarT, taoScarT) #mean scarTvarislogscale
-  aSite[k]~dnorm(muEmerge, tauEmerge) # baseline success rate, logscale
-  bseedT[k]~dnorm(muSeedT,tauSeedT)
-}
-
-
-#priors
-tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
-sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
-
-taoScarT<-1/(sigmaScarT*sigmaScarT)
-sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
-
-taoSeedT<-1/(sigmaSeedT*sigmaSeedT)
-sigmaSeedT~dunif (0,10) 
-
-taoBackground<-1/sigmaBackground*sigmaBackground
-sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
-
-muEmerge~dnorm(0,0.0001)
-muScarT~dnorm(0,0.0001)
-muBackground~dnorm(0,0.0001)
-muSeedT~dnorm(0,0.0001)
-
-
-
-# #poisson option, trials same as below
-# numTrtRecruit[trt==seeded]~poisson (muRecruit)
-# muRecruit=exp(log(trials)+aSite[site[i]+bscarifcation[site[i]*scarifiation[plot[i]]]]) # could add in extra poisson resid variation here if wanted
-
-#Derived
-
-for (i in 1:nsite){
-  bscarTBT[i]<-exp(bscarT[i])
-  bseedTBT[i]<-exp(bseedT[i])
-}
-
-muBackgroundBT<-exp(muBackground)
-muEmergeBT<-exp(muEmerge)
-muScarTBT<-exp(muScarT)
-muSeedTBT<-exp(muSeedT)
-
+      for (i in 1:n){ #i indexes over data rows
+      y[i]~dpois(mu[i])
+      log(mu[i])<-max(-20,min(20,eta[i]))
+      eta[i]<-log(trials[i])+aSite[siteData[i]]+bscarT[siteData[i]]*scarT[i]+bseedT[siteData[i]]*seedT[i] #+a[i]
+      trials[i]<-numSeeded[i]*germRate[siteData[i]] #make this not fixed? 
+      
+      #Discrepancy measures
+      yNew[i]~dpois(mu[i])
+      PRes[i]<-(y[i]-mu[i])/sqrt(mu[i])
+      PResNew[i]<-(yNew[i]-mu[i])/sqrt(mu[i])
+      D[i]<-(Pres[i]*Pres[i])
+      DNew[i]<-(PResNew[i]*PResNew[i])
+      ExpY[i]<-exp(eta[i])*exp(sigma2.site/2)
+      
+      VarY[i]<-exp(eta[i])*(exp(eta[i])*(exp(sigma2.site)-1)*exp(sigma2.site)+exp(sigma2.site/2))
+      PResEQ[i]<-(y[i]-ExpY[i])/sqrt(VarY[i])
+      Disp1[i]<-(PresEQ[i]*PresEQ[i])
+      
+      }
+      
+      Dispersion<-sum(Disp1) #[]?
+      Fit<-sum(Fiti)
+      FitNew<-sum(FitiNew)
+      
+      
+      for (k in 1:nsite){
+      # #option for if we have raw data for each site
+      #germRate[k] ~ dbinom(germinants[k], seeds[k])
+      #need to keep the next line positive, either lognormal or log the vals
+      bscarT[k]~dnorm(muScarT, taoScarT) #mean scarTvarislogscale
+      aSite[k]~dnorm(muEmerge, tauEmerge) # baseline success rate, logscale
+      bseedT[k]~dnorm(muSeedT,tauSeedT)
+      }
+      
+      
+      #priors
+      tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
+      sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+      
+      taoScarT<-1/(sigmaScarT*sigmaScarT)
+      sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+      
+      taoSeedT<-1/(sigmaSeedT*sigmaSeedT)
+      sigmaSeedT~dunif (0,10) 
+      
+      taoBackground<-1/sigmaBackground*sigmaBackground
+      sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+      
+      muEmerge~dnorm(0,0.0001)
+      muScarT~dnorm(0,0.0001)
+      muBackground~dnorm(0,0.0001)
+      muSeedT~dnorm(0,0.0001)
+      
+      
+      
+      # #poisson option, trials same as below
+      # numTrtRecruit[trt==seeded]~poisson (muRecruit)
+      # muRecruit=exp(log(trials)+aSite[site[i]+bscarifcation[site[i]*scarifiation[plot[i]]]]) # could add in extra poisson resid variation here if wanted
+      
+      #Derived
+      
+      for (i in 1:nsite){
+      bscarTBT[i]<-exp(bscarT[i])
+      bseedTBT[i]<-exp(bseedT[i])
+      }
+      
+      muBackgroundBT<-exp(muBackground)
+      muEmergeBT<-exp(muEmerge)
+      muScarTBT<-exp(muScarT)
+      muSeedTBT<-exp(muSeedT)
+      
       }
       ","gtree_y1germ.jags")
 
@@ -127,6 +132,7 @@ inits<-list(initsA,initsB,initsC)
 
   
 params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","muBackground", "sigmaBackground","bscarT","bseedT","aSite","muBackgroundsite","muEmergeBT","muBackgroundBT","muScarTBT","muSeedT","muSeedTBT")
+params<-c("muEmerge","sigmaEmerge")
 
 library(rjags)
 library(R2jags)
