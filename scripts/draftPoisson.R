@@ -128,10 +128,19 @@ params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT",
 
 library(rjags)
 library(R2jags)
-modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=1000,n.burnin=100, n.thin=10, DIC=FALSE, working.directory=NULL, progress.bar = "text")
+modout.gtree<-jags(jags.dat,inits=NULL, params, 
+                   model.file="gtree_y1germ.jags",
+                   n.chains=3,n.iter=1000,n.burnin=100,
+                   n.thin=10, DIC=TRUE, working.directory=NULL,
+                   progress.bar = "text")
 
 print(modout.gtree)
 plot(modout.gtree)
+
+
+#Baesiant p value suggests that this is a craptastic model
+#You want it to be close to 0.50
+mean(modout.gtree$BUGSoutput$sims.list$FitNew>modout.gtree$BUGSoutput$sims.list$Fit)
 
 coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','50%','97.5%')])
 overDisp<-coefsout$`50%`[rownames(coefsout)=="Dispersion"]/(jags.dat$n-3) #Dispersion/N-k where k= # of reg params and N is sample size
