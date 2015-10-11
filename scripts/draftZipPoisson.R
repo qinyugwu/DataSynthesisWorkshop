@@ -21,7 +21,7 @@ jags.dat<-list(
   seedT=plotDatasub$seedT,
   scarT=plotDatasub$scarT,
   #sitePlot=plotDatasub$siteNum, #vector indicating site, length of the total number of unique plots
-  #numSeeded=plotDatasub$seeds.per.plot, #fix this to be the proper number PER SPECIES/PROVENANCE
+  numSeeded=plotDatasub$seeds.per.plot, #fix this to be the proper number PER SPECIES/PROVENANCE
   #plot=plotDatasub$uniquePlotNum,
   siteData=plotDatasub$siteNum
   )
@@ -43,6 +43,8 @@ str(jags.dat)
 #need a vector one per row of numseeded ->ids
 #need a vector one per row of site -> ids
 
+#Model based on Zuur ZI Models book p. 55
+
 write("
       model{
 #need different background rates for scarified and not scarified treatments
@@ -57,13 +59,13 @@ write("
       yNew[i]~dpois(mu[i])
       PRes[i]<-(y[i]-mu[i])/sqrt(mu[i])
       PResNew[i]<-(yNew[i]-mu[i])/sqrt(mu[i])
-      D[i]<-(Pres[i]*Pres[i])
+      D[i]<-(PRes[i]*PRes[i])
       DNew[i]<-(PResNew[i]*PResNew[i])
-      ExpY[i]<-exp(eta[i])*exp(sigma2.site/2)
+      ExpY[i]<-exp(eta[i])*exp(tauEmerge/2)
       
-      VarY[i]<-exp(eta[i])*(exp(eta[i])*(exp(sigma2.site)-1)*exp(sigma2.site)+exp(sigma2.site/2))
+      VarY[i]<-exp(eta[i])*(exp(eta[i])*(exp(tauEmerge)-1)*exp(tauEmerge)+exp(tauEmerge/2))
       PResEQ[i]<-(y[i]-ExpY[i])/sqrt(VarY[i])
-      Disp1[i]<-(PresEQ[i]*PresEQ[i])
+      Disp1[i]<-(PResEQ[i]*PResEQ[i])
       
       }
       
