@@ -18,8 +18,6 @@ jags.dat<-list(
   nsite=length(unique(plotDatasub$site)),
   n=nrow(plotDatasub),
   germRate=runif (nsite,0.6, 0.8), # make up a number between zero and 1 for each site (length of the number of sites)
-  #germRate=germRate$germRate, # make up a number between zero and 1 for each site (length of the number of sites)
-  #siteData=germRate$siteNum, #one value indicating site to go with germ Rate
   seedT=plotDatasub$seedT,
   scarT=plotDatasub$scarT,
   #sitePlot=plotDatasub$siteNum, #vector indicating site, length of the total number of unique plots
