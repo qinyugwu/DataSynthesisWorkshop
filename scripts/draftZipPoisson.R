@@ -70,8 +70,8 @@ write("
       }
       
       Dispersion<-sum(Disp1) #[]?
-      Fit<-sum(Fiti)
-      FitNew<-sum(FitiNew)
+      Fit<-sum(D)
+      FitNew<-sum(DNew)
       
       
       for (k in 1:nsite){
