@@ -13,4 +13,12 @@ cleanup of factor coding, date formatting, typos, etc in original files
 and infilling of 0s.
 outputs: Data/cleanData/plotDataClean.csv; Data/cleanData/siteDataClean.csv
 
-3.
+3.scripts/subsetPlotData.r
+PREPARE#PREPARE DATA TO PLAY WITH FOR ANALYSIS, CUTTING OUT COMPLICATIONS
+#TO MAKE A TESTING DATASET
+#ABJ 10/11/2015
+
+#ISSUES - nearly all needs to be redone once the final data are prepared,
+#we threw out a lot.
+
+4.draftLatencyModel.r
