@@ -1,0 +1,41 @@
+# Zip model: site-specific normal random effects in the Poisson part;
+#            variables in the zero-inflation part without random effects.
+# response variable BScount
+# reference :Zhang et al Forest Ecology and Management(2012)
+# 
+model{
+for (j in 1:nObs){ # j is observation index.
+  zeros[j]<-0
+  zeros[j]~dpois(mu[j])
+  mu[j]<- -ll[j]
+  z[j]<-equals(BScount[j],0)
+
+  #log-likelihood
+  ll[j]<-z[j]*log( p[j]+(1-p[j])*exp(-lambda[j]) )+(1-z[j])*(log(1-p[j])+fd[j]) 
+  fd[j]<- -lambda[j]+BScount[j]*log(lambda[j])-logfact(BScount[j]) 
+
+  # response model for count data.
+  log(lambda[j])<-bb[site[j]]+beta0+beta[1]*zresidorg[j]+beta[2]*zmoist[j]+beta[3]*zlivemoss[j]+
+                  beta[4]*BSsown[j]
+
+  # zero-inflation model: p[i,j] is the prob P(extra zero)
+  logit(p[j])<-alpha0+alpha[1]*zelevation[j]+alpha[2]*zmoist[j]+alpha[3]*zTSLF[j]+
+               alpha[4]*BSsown[j]+alpha[5]*zlivemoss[j]
+} # end of j
+
+for (i in 1:nsite){ # i is site index.
+  bb[i]~dnorm(0, taub)
+} # end of i.
+
+
+#priors 
+beta0~dnorm(0,0.01)
+alpha0~dnorm(0,0.01)
+ 
+beta[1:4]~dmnorm(mub[1:4],Tb[1:4,1:4])
+alpha[1:5]~dmnorm(mua[1:5],Ta[1:5,1:5])
+
+taub<-pow(1/sigb,2)
+
+sigb~dunif(0,10)
+}# end of model
