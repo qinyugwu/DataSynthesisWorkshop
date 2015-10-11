@@ -202,8 +202,7 @@ bu<-plotData
 #NOTE IGNORED STEVE'S SITES DUE TO MULTISEEDING CONFUSION
 plotData<-merge(bu[!bu$site%in%(c('Churchill, MB',
                                   'Wolf Creek, YK',
-                                  'Canol Trail, NWT',
-                                  'Rif Blanc')),], siteSpecies, all.x=T)
+                                  'Canol Trail, NWT')),], siteSpecies, all.x=T)
 
 plotData$exp.seedling.sp[is.na(plotData$exp.seedling.sp)]<-plotData$sp.seeded[is.na(plotData$exp.seedling.sp)]
 
@@ -223,10 +222,12 @@ plotData$exp.seedling.count.y1[is.na(plotData$exp.seedling.count.y1)]<-0
 for (i in 1:nrow(plotData)){
   plotData$tot.emerge.y1[i]<-plotData$exp.seedling.count.y1[i]
   #assume that nonseeded plots with NA in expt seedling didn't write them in here
-  if (plotData$treatment[i]%in%c('SC', 'CN', 'PSC')&is.na(plotData$tot.emerge.y1[i])){
-    plotData$tot.emerge.y1[i]<-0    
-  }
+#   if (plotData$treatment[i]%in%c('SC', 'CN', 'PSC')&is.na(plotData$tot.emerge.y1[i])){
+#     plotData$tot.emerge.y1[i]<-0    
+#   }
+  #add in the nat.seedling.count if the species matches that which was added
   if (!is.na(plotData$nat.seedling.count.y1[i])&!is.na(plotData$nat.seedling.sp.y1[i])){
+    toadd<-0 # to make sure
     toadd<-plotData$nat.seedling.count.y1[i]*
       ifelse(plotData$nat.seedling.sp.y1[i]==plotData$exp.seedling.sp[i],1,0)
     plotData$tot.emerge.y1[i]<-plotData$tot.emerge.y1[i]+toadd
