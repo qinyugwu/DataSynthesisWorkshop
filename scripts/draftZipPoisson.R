@@ -77,7 +77,7 @@ write("
       # #option for if we have raw data for each site
       #germRate[k] ~ dbinom(germinants[k], seeds[k])
       #need to keep the next line positive, either lognormal or log the vals
-      bscarT[k]~dnorm(muScarT, taoScarT) #mean scarTvarislogscale
+      bscarT[k]~dnorm(muScarT, tauScarT) #mean scarTvarislogscale
       aSite[k]~dnorm(muEmerge, tauEmerge) # baseline success rate, logscale
       bseedT[k]~dnorm(muSeedT,tauSeedT)
       }
@@ -87,21 +87,19 @@ write("
       tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
       sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
       
-      taoScarT<-1/(sigmaScarT*sigmaScarT)
+      tauScarT<-1/(sigmaScarT*sigmaScarT)
       sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
       
-      taoSeedT<-1/(sigmaSeedT*sigmaSeedT)
+      tauSeedT<-1/(sigmaSeedT*sigmaSeedT)
       sigmaSeedT~dunif (0,10) 
       
-      taoBackground<-1/sigmaBackground*sigmaBackground
-      sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+      #tauBackground<-1/sigmaBackground*sigmaBackground
+      #sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
       
       muEmerge~dnorm(0,0.0001)
       muScarT~dnorm(0,0.0001)
-      muBackground~dnorm(0,0.0001)
+      #muBackground~dnorm(0,0.0001)
       muSeedT~dnorm(0,0.0001)
-      
-      
       
       # #poisson option, trials same as below
       # numTrtRecruit[trt==seeded]~poisson (muRecruit)
@@ -114,7 +112,7 @@ write("
       bseedTBT[i]<-exp(bseedT[i])
       }
       
-      muBackgroundBT<-exp(muBackground)
+      #muBackgroundBT<-exp(muBackground)
       muEmergeBT<-exp(muEmerge)
       muScarTBT<-exp(muScarT)
       muSeedTBT<-exp(muSeedT)
