@@ -261,6 +261,8 @@ write("
       #muSeedT~dnorm(0,0.0001)
       
       #Derived
+
+      interaction<-muEmerge[2,2]-(muEmerge[2,1]+muEmerge[1,2])
       
       for (i in 1:nsite){
         for (j in 1:2){
@@ -291,7 +293,7 @@ for (i in 1:jags.dat$nsite){
     paramsBT<-c(paramsBT,out)
   }}}
 
-params<-c("muEmerge", "sigmaEmerge","aSite", "Disp1","sigmaResid","Dispersion","Fit", "FitNew",paramsBT,"muEmergeBT[1,1]","muEmergeBT[1,2]","muEmergeBT[2,1]","muEmergeBT[2,2]")
+params<-c("muEmerge", "sigmaEmerge","aSite", "Disp1","sigmaResid","Dispersion","Fit", "FitNew",paramsBT,"muEmergeBT[1,1]","muEmergeBT[1,2]","muEmergeBT[2,1]","muEmergeBT[2,2]","interaction")
 
 
 library(rjags)
