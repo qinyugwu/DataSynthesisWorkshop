@@ -29,9 +29,9 @@ veg_problems <- veg_problems[veg_problems$site != "Wolf Creek, YK", ]
 unique(veg_problems$site)
 
 #Craigieburn T1 P8 : mineral should be 29 instead of 229
-#"Canol Trail, NWT", "Wolf Creek, YK" and "Churchill, MB": category "other" = 100 in all cases so OK
-#Cover > 100% might be layers? e.g. Ruby Range Printers,
-#Cover < 100% ??? e.g. Davos
+#"Canol Trail, NWT", "Wolf Creek, YK" and "Churchill, MB": category "other" = 100 in all cases: any details?
+#Cover > 100%: overlap between veg layers (Printers, Mt Hotham)
+#Cover < 100% ??? e.g. Davos (bare ground/rock/litter?)
 
 
 BPnon.vascular <- boxplot(plotData2$non.vascular ~ plotData2$site)
