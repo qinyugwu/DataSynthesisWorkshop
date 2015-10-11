@@ -93,18 +93,10 @@ write("
       
       tauSeedT<-1/(sigmaSeedT*sigmaSeedT)
       sigmaSeedT~dunif (0,10) 
-      
-      #tauBackground<-1/sigmaBackground*sigmaBackground
-      #sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
-      
+            
       muEmerge~dnorm(0,0.0001)
       muScarT~dnorm(0,0.0001)
-      #muBackground~dnorm(0,0.0001)
       muSeedT~dnorm(0,0.0001)
-      
-      # #poisson option, trials same as below
-      # numTrtRecruit[trt==seeded]~poisson (muRecruit)
-      # muRecruit=exp(log(trials)+aSite[site[i]+bscarifcation[site[i]*scarifiation[plot[i]]]]) # could add in extra poisson resid variation here if wanted
       
       #Derived
       
