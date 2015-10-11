@@ -12,7 +12,7 @@ plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
 #plots<-unique(plotDatasub[,c("siteNum","uniquePlotNum","seedT","scarT")])
 
 jags.dat<-list(
-  y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only 
+  y=plotDatasub$germ.y1, # number of naturally occuring + germinated for species of interest only 
   #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
   #nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
@@ -139,7 +139,7 @@ library(rjags)
 library(R2jags)
 modout.gtree<-jags(jags.dat,inits=NULL, params, 
                    model.file="gtree_y1germ_overdisp.jags",
-                   n.chains=3,n.iter=1000,n.burnin=100, n.thin=10,
+                   n.chains=3,n.iter=10000,n.burnin=1000, n.thin=10,
                    DIC=TRUE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
