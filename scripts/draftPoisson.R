@@ -122,8 +122,9 @@ initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$
 inits<-list(initsA,initsB,initsC)
 
   
-params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT","aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Disp1",
-          "Dispersion")
+params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","bscarT","bseedT",
+          "aSite","muEmergeBT","muScarTBT","muSeedT","muSeedTBT", "Disp1",
+          "Dispersion","Fit", "FitNew")
 
 library(rjags)
 library(R2jags)
