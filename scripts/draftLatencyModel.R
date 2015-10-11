@@ -86,9 +86,9 @@ sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or co
 taoBackground<-1/sigmaBackground*sigmaBackground
 sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
 
-muEmerge~dnorm(0,100)
-muScarT~dnorm(0,100)
-muBackground~dnorm(0,100)
+muEmerge~dnorm(0,0.001)
+muScarT~dnorm(0,0.001)
+muBackground~dnorm(0,0.001)
 
 
 
