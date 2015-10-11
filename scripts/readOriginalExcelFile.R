@@ -4,9 +4,11 @@
 # assumes working directory is set to DataSynthesisWorkshop repo
 
 
+#ISSUES - can't read the new plotData
+
 library (xlsx)
 siteData<-read.xlsx('Background/GTREE_Master_30Sept2015.xlsx',sheetName='SiteData')
-plotData<-read.xlsx('Background/GTREE_Master_30Sept2015.xlsx',sheetName='PlotData')
+plotData<-read.xlsx('Background/MASTER_GTREE_11Oct2015.xlsx',sheetName='Sheet1')
 
 
 source('scripts/rem_specialChars.R')
