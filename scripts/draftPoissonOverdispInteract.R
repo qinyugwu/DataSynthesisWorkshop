@@ -182,8 +182,8 @@ ggplot(coefsout[coefsout$Type %in% c("aSite"),])+
 # OVERDISPERSED, WITH INTERACTION ---------
 
 plotDatasub$seeds.per.plot[plotDatasub$site=="Craigieburn"]<-150
-plotDatasub$seeds.per.plot[plotDatasub$site=="Tess\xf3"]<-300
-plotDatasub$seeds.per.plot[plotDatasub$site=="TexasCreek"]<-100
+plotDatasub$seeds.per.plot[plotDatasub$site=="Tesso"]<-300
+plotDatasub$seeds.per.plot[plotDatasub$site=="Texas Creek"]<-100
 
 plotDatasub$siteNum<-as.numeric(as.factor(as.character(plotDatasub$site)))
 plotDatasub$uniquePlotNum<-as.numeric(as.factor(as.character(plotDatasub$uniquePlot)))
@@ -302,7 +302,8 @@ for (i in 1:jags.dat$nsite){
     paramsBT<-c(paramsBT,out)
   }}}
 
-params<-c("muEmerge", "sigmaEmerge","aSite", "Disp1","sigmaResid","Dispersion","Fit", "FitNew",paramsBT,"muEmergeBT[1,1]","muEmergeBT[1,2]","muEmergeBT[2,1]","muEmergeBT[2,2]","interaction")
+params<-c("muEmerge", "sigmaEmerge","aSite", "sigmaResid","Dispersion","Fit",
+          "FitNew",paramsBT,"muEmergeBT[1,1]","muEmergeBT[1,2]","muEmergeBT[2,1]","muEmergeBT[2,2]","interaction")
 
 
 library(rjags)
@@ -320,7 +321,7 @@ mean(modout.gtree$BUGSoutput$sims.list$FitNew>modout.gtree$BUGSoutput$sims.list$
 coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','50%','97.5%')])
 overDisp<-coefsout$`50%`[rownames(coefsout)=="Dispersion"]/(jags.dat$n-3) #Dispersion/N-k where k= # of reg params and N is sample size
 
-coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 2))
+coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 1))
 #coefsout$siteNum<-gsub("\\D","",  rownames(coefsout)) #add in sitenumber
 #coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
 as.vector(sapply(strsplit(rownames(coefsout),"\\D",fixed=FALSE), "[", 1))
