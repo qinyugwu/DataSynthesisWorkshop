@@ -320,9 +320,25 @@ mean(modout.gtree$BUGSoutput$sims.list$FitNew>modout.gtree$BUGSoutput$sims.list$
 coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','50%','97.5%')])
 overDisp<-coefsout$`50%`[rownames(coefsout)=="Dispersion"]/(jags.dat$n-3) #Dispersion/N-k where k= # of reg params and N is sample size
 
-coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 1))
+coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 2))
 #coefsout$siteNum<-gsub("\\D","",  rownames(coefsout)) #add in sitenumber
 #coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
+as.vector(sapply(strsplit(rownames(coefsout),"\\D",fixed=FALSE), "[", 1))
+
+mysplit<-function(x,maxLength){
+  xtemp<-as.numeric(unlist(strsplit(gsub('[A-z]', '', x),split=',')))
+  tofill<-maxLength-length(xtemp)
+  xtemp<-c(rep(NA, tofill), xtemp)
+  return(xtemp)
+}
+
+cbind.data.frame(coefsout, t(sapply(rownames(coefsout), function(x) mysplit(x, 4))))
+
+# coefs.b<-coefsout
+# coefs.b$a<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 2))
+# coefs.b$b1<-as.vector(sapply(strsplit(coefs.b$a,"\\D",fixed=FALSE), "[", 1))
+# coefs.b$b2<-coefs.b$a[,1]
+# coefs.b$b3<-as.vector(sapply(strsplit(coefs.b$a,"\\D",fixed=FALSE), "[", 1))
 
 coefsout.asite<-coefsout[coefsout$Type=="aSite",]
 coefsout.asite$siteNum<-c(rep(1:jags.dat$nsite,4))
