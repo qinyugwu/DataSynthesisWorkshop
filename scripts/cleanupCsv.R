@@ -15,19 +15,17 @@
 # work with y2 data - that is totally ignored thus far, and is currently reading as a logical
 # still a bunch of NAs in the nat seedling cts and expt seedling cts - what is this?
 
+#2779 rows of plot data 10/12/2015
 
 siteData<-read.csv('Data/siteData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
-#changed to read the plotData directly
-plotData<-read.csv('Data/plotData.csv', fileEncoding='latin1',stringsAsFactors=F,
+plotData<-read.csv('Data/plotData.csv', fileEncoding='UTF-8',stringsAsFactors=F,
                    strip.white=T)
-plotData<-plotData[plotData$site!='',]
 
 #replace blanks with NA in exp.seedling.sp
 plotData$exp.seedling.sp[plotData$exp.seedling.sp==""]<-NA
 
 #Convert all genus species to the same format
-
 sort(unique(siteData$sp.seeded)) #site sheet is good
 
 #plot needs fixing, so we fixed it
@@ -41,6 +39,8 @@ plotData$exp.seedling.sp<-gsub("_"," ",plotData$exp.seedling.sp,fixed=TRUE)
 #"41919"   #10/7/2014
 plotData$date.seeded[plotData$date.seeded=="41918"]<-"20141006"
 plotData$date.seeded[plotData$date.seeded=="41919"]<-"20141007"
+plotData$date.seeded[plotData$date.seeded=="7-Oct-14"]<-"20141007"
+plotData$date.seeded[plotData$date.seeded=="6-Oct-14"]<-"20141006"
 
 plotData$date.seeded[plotData$date.seeded=='22.5.2014']<-'20140522'
 plotData$date.seeded[plotData$date.seeded=='3.6.2014']<-'20140306'
@@ -58,33 +58,31 @@ sort(unique(plotData$zone))
 plotData$zone[plotData$zone=="Alpine" & !is.na(plotData$zone)]<-"AT"
 plotData$zone[plotData$zone=="Forest" & !is.na(plotData$zone)]<-"F"
 plotData$zone[plotData$zone=="Treeline" & !is.na(plotData$zone)]<-"T"
-plotData$zone[plotData$zone=="FT" & !is.na(plotData$zone)]<-"T" #???????????????? (sites are TexasCreek and Blowdown)
 
 #add provenence data for 12 Mile site (GET THIS INFO FROM BECKY AND TERESA!)
 plotData$provenance[plotData$site=="12 Mile" & plotData$transect %in% c(1,2)]<-"high"
 plotData$provenance[plotData$site=="12 Mile" & plotData$transect %in% c(3,4)]<-"low"
 
 #change CTL to CN
-
-plotData$treatment[plotData$treatment=="CTL" & !is.na(plotData$treatment)]<-"CN"
+#plotData$treatment[plotData$treatment=="CTL" & !is.na(plotData$treatment)]<-"CN"
 
 #greater than signs in the organic depth (also in "organic"), no data instead of NA in organic depth
 
 siteData$closest.seed.tree[siteData$closest.seed.tree==">500" & !is.na(siteData$closest.seed.tree)] # <-????????????
 siteData$closest.stand.tree[siteData$closest.stand.tree==">200m" & !is.na(siteData$closest.stand.tree)] # <-????????????
 
-plotData$organic[plotData$organic=="<1" & !is.na(plotData$organic)]<-"0.5"
+#doesn't seem needed in cleaned file
+# plotData$organic[plotData$organic=="<1" & !is.na(plotData$organic)]<-"0.5"
+# 
+# sort(unique(plotData$organic.depth))
+# plotData$organic.depth[plotData$organic.depth==">30" & !is.na(plotData$organic.depth)]<-50 #?????????? this is apparently very deep - Becca says probably 50 and definitely more than 50 (max value of other sites is 50)
+# plotData$organic.depth[plotData$organic.depth==">5" & !is.na(plotData$organic.depth)] #<- ?????????
+# plotData$organic.depth[plotData$organic.depth=="no data" & !is.na(plotData$organic.depth)]<-NA
 
-sort(unique(plotData$organic.depth))
-plotData$organic.depth[plotData$organic.depth==">30" & !is.na(plotData$organic.depth)]<-50 #?????????? this is apparently very deep - Becca says probably 50 and definitely more than 50 (max value of other sites is 50)
-plotData$organic.depth[plotData$organic.depth==">5" & !is.na(plotData$organic.depth)] #<- ?????????
-plotData$organic.depth[plotData$organic.depth=="no data" & !is.na(plotData$organic.depth)]<-NA
-
-plotData<-within(plotData,organic.depth<-as.numeric(organic.depth))
-plotData<-within(plotData,organic<-as.numeric(organic))
+# plotData<-within(plotData,organic.depth<-as.numeric(organic.depth))
+# plotData<-within(plotData,organic<-as.numeric(organic))
 
 #check to make sure all fields that should be numeric are coded as such
-
 str(siteData)
 str(plotData)
 
@@ -94,14 +92,9 @@ plotData$nat.seedling.count.y0<-suppressWarnings(as.integer(
 plotData$nat.seedling.count.y1<-suppressWarnings(as.integer(
   plotData$nat.seedling.count.y1))
 
-# make a unique plot column - CHECK WITH ANDREW WHAT UNIQUE NAMES ARE
-
-#plotData$unique.plot<-paste(plotData$site,plotData$plot,sep="_")
-
 # closest.seed.tree and closest.stand.tree have questions marks
 
 sort(unique(siteData$closest.seed.tree))
-
 siteData$closest.seed.tree[siteData$closest.seed.tree=="?" & !is.na(siteData$closest.seed.tree)]<-NA
 siteData$closest.stand.tree[siteData$closest.stand.tree=="?" & !is.na(siteData$closest.stand.tree)]<-NA
 
@@ -109,9 +102,9 @@ siteData<-within(siteData,closest.seed.tree<-as.numeric(closest.seed.tree))
 siteData<-within(siteData,closest.stand.tree<-as.numeric(closest.stand.tree))
 
 
-# other column has a lot of columns and then 'herbfield'
-                   
-plotData$other[plotData$other=="herbfield" & !is.na(plotData$other)] #<-???????????
+# other column has a lot of columns and then 'herbfield' 
+# not anymore
+#plotData$other[plotData$other=="herbfield" & !is.na(plotData$other)] #<-???????????
 
 plotData$nat.seedling.sp.y0[plotData$nat.seedling.sp.y0=='ABLA']<-'Abies lasiocarpa'
 
