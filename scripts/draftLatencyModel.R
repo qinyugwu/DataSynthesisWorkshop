@@ -13,13 +13,14 @@ plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
 
 jags.dat<-list(
   #y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only (in that plot)
-  y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
+  #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
+  y=plotDatasub$surv.yr1,
   nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
   n=nrow(plotDatasub),
-  #fake germ rate
+  #fake germ rate make up a number between zero and 1 for each site
   germRate=runif (length(unique(plotDatasub$site)),0.6, 0.8),
-  siteNum=c(1:length(unique(plotDatasub$site))make up a number between zero and 1 for each site
+  siteNum=c(1:length(unique(plotDatasub$site))), 
   #germRate=germRate$germRate, # make up a number between zero and 1 for each site (length of the number of sites)
   #siteData=germRate$siteNum, #one value indicating site to go with germ Rate
   seedT=plotDatasub$seedT,
