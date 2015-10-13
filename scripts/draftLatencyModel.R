@@ -55,7 +55,7 @@ for (i in 1:n){ #i indexes over data rows
   y[i]~dpois(y.exp[i]) 
   #predicted number is the sum of those recruited from added seeds +
   #the background rate from nonexperimentally added
-  y.exp[i]<-numTrtRecruit[i] + muBackgroundSiteScar[siteData[i], [scarT[i]+1]]#mixture
+  y.exp[i]<-numTrtRecruit[i] + muBackgroundSiteScar[siteData[i], (scarT[i]+1)]  #mixture
 
   #no longer used - binomial option that caused jags unhappiness
   #when we modeled y as a sum
@@ -154,8 +154,15 @@ plot(modout.gtree)
 
 
 coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','97.5%')])
+
+#get coefficient name (before the square brackets)
 coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 1))
+
+#site number hardcoded so we should maybe fix this using the mysplit, copy 
+#from draftPoissonOverdispInteracct
 coefsout$siteNum<-as.vector(c(rep(1:10,2),NA,NA,rep(1:10,1),rep(NA,7)))
+
+#adding the name of the site
 coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
 
 head(coefsout)
@@ -164,6 +171,7 @@ ggplot(coefsout[coefsout$Type %in% c("bscarT"),])+
   geom_point(aes(x=site,y=mean),size=6)+
   geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`),width=0.18,size=1.8)+
   geom_hline(yintercept=0,linetype="dotted")+
+  #this is the coefsout mean effects
   geom_ribbon(aes(x=as.numeric(factor(site)),ymax=0.19676482,ymin=-0.18679486),alpha=0.2,fill="red")+
   theme_bw()+xlab("\nSITE")+ylab("Treatment Effect\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
 
