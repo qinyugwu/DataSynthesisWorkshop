@@ -13,13 +13,14 @@ plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
 
 jags.dat<-list(
   #y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only (in that plot)
-  y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
+  #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
+  y=plotDatasub$surv.yr1,
   nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
   n=nrow(plotDatasub),
-  #fake germ rate
+  #fake germ rate make up a number between zero and 1 for each site
   germRate=runif (length(unique(plotDatasub$site)),0.6, 0.8),
-  siteNum=c(1:length(unique(plotDatasub$site))make up a number between zero and 1 for each site
+  siteNum=c(1:length(unique(plotDatasub$site))), 
   #germRate=germRate$germRate, # make up a number between zero and 1 for each site (length of the number of sites)
   #siteData=germRate$siteNum, #one value indicating site to go with germ Rate
   seedT=plotDatasub$seedT,
@@ -49,11 +50,15 @@ str(jags.dat)
 
 write("
       model{
-#need different background rates for scarified and not scarified treatments
-#difference in background rate for scarified and not scarified plots (both not seeded)
 for (i in 1:n){ #i indexes over data rows
-  y[i]~dpois(y.exp[i])
-  y.exp[i]<-numTrtRecruit[i] + muBackgroundsite[siteData[i]]#mixture
+  #data level - SCE note could make this overdispersed if necessary
+  y[i]~dpois(y.exp[i]) 
+  #predicted number is the sum of those recruited from added seeds +
+  #the background rate from nonexperimentally added
+  y.exp[i]<-numTrtRecruit[i] + muBackgroundSiteScar[siteData[i], [scarT[i]+1]]#mixture
+
+  #no longer used - binomial option that caused jags unhappiness
+  #when we modeled y as a sum
   #numTrtRecruitALL[i]<-numTrtRecruit[i]*seedT[i] #this will cause the numTrtRecruit not to enter the likelihood for the nonseeded plots
   #numTrtRecruit[i]~dbinom(emergRate[plot[i]], trials[i]) 
 
@@ -62,20 +67,34 @@ for (i in 1:n){ #i indexes over data rows
 #need a vector sitePlot of each sitenumber for each plot
 #need a vector of scarT (1,0) for each plot
 for (j in 1:nplot){
+  #num that recruited from the seed treatment addition is a function of
+  #the number of trials (viableseeds added - so result is in per viable seed added)
+  #plus asite which is the intercept for seed addition (log scale)
+  #plus bscarT which is the addition amt of recruitment per seed added by doing scarification
+  # the multiplication by seedT will make this term 0 out for nonseeded plots.
   numTrtRecruit[j]<-(exp(log(trials[j])+aSite[sitePlot[j]]+bscarT[sitePlot[j]]*scarT[j]))*seedT[j]
+  
+  #estimate of viable seed intensity
   trials[j]<-numSeeded[j]*germRate[sitePlot[j]]#make this not fixed? 
   #numBackground[j]<-muBackgroundsite[sitePlot[j]]
 }
 
 
 for (k in 1:nsite){
+  for (m in 1:2){# for both notscarified and scarified
 # #option for if we have raw data for each site
   #germRate[k] ~ dbinom(germinants[k], seeds[k])
   #need to keep the next line positive, either lognormal or log the vals
-  logMuBackground[k]~dnorm(muBackground, taoBackground) #mean background emergence rate, varisLogclace
-  muBackgroundsite[k]<-exp(logMuBackground[k])
-  bscarT[k]~dnorm(muScarT, taoScarT) #mean scarTvarislogscale
-  aSite[k]~dnorm(muEmerge, tauEmerge) # baseline success rate, logscale
+  #mean background emergence rate in each scarifed treatment, here 1 indexes for nonscarified
+  #2 indexes for scarified, #1 fornonscarifiedg
+     #difference between muBackgroundsites is the difference in background between scarified and nonscarified
+    #drawn from hierarchicial model hyperparameter across sites
+    logmuBackgroundSiteScar[k, m]~dnorm(muBackgroundScarT[m], taoBackgroundScarT[m]) 
+    muBackgroundSiteScar[k, m]<-exp(logmuBackgroundSiteScar[k, m])
+  }
+  #these never enter the likelihood for seeded treatments
+  bscarT[k]~dnorm(muScarT, taoScarT) #the trtmt effect of scarification in seeded
+  aSite[k]~dnorm(muEmerge, tauEmerge) # baseline success rate w seeding, logscale
 }
 
 
@@ -86,13 +105,16 @@ sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or c
 taoScarT<-1/(sigmaScarT*sigmaScarT)
 sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
 
-taoBackground<-1/sigmaBackground*sigmaBackground
-sigmaBackground~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+for (m in 1:2){
+  taoBackgroundScarT[m]<-1/sigmaBackgroundScarT[m]*sigmaBackgroundScarT[m]
+  sigmaBackgroundScarT[m]~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+  muBackgroundScarT[m]~dnorm(0,0.001)
+}
+
+
 
 muEmerge~dnorm(0,0.001)
 muScarT~dnorm(0,0.001)
-muBackground~dnorm(0,0.001)
-
 
 
 # #poisson option, trials same as below
@@ -112,13 +134,13 @@ muScarTBT<-exp(muScarT)
       }
       ","gtree_y1germ.jags")
 
-initsA<-list(muBackground=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
-
-initsB<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
-
-initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
-
-inits<-list(initsA,initsB,initsC)
+# initsA<-list(muBackground=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
+# 
+# initsB<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
+# 
+# initsC<-list(aplot=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
+# 
+# inits<-list(initsA,initsB,initsC)
 
   
 params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","muBackground", "sigmaBackground","bscarT","aSite","muBackgroundsite","muEmergeBT","muBackgroundBT","muScarTBT")
