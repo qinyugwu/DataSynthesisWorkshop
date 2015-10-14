@@ -26,26 +26,25 @@ jags.dat<-list(
   siteData=plotDatasub$siteNum
   )
 
+
+#view data
 str(jags.dat)
 
 
-#numAdded = 100
-#numNatOccuring = 10
-
-#y=rpois(1,100) + numNatOccuring
-
-#log(y) = Bprop*log(numAdded + numNatOccuring)
-
-#need n = number of data points
-#need a vector one per row of data y ->total#seedlings of species of interest
-#need a vector one per row of data seedT ->seeded or not?
-#need a vector one per row of plot ->ids per row
-#need a vector one per row of numseeded ->ids
-#need a vector one per row of site -> ids
+#data description
+#y = response variable, such as count of germinants in a particular year <vector,length =n>
+#nsite = number of sites included in analysis <scalar>
+#n = total number of data points (rows in data) <scalar>
+#germrate = estimate of seed viability in lab.
+#seedT = seeding treatment per record, 1= seeded, 0 = not seeded.<vector,length =n>
+#scarT = seeding treatment per record, 1= seeded, 0 = not seeded.<vector,length =n>
+#numSeeded -><vector,length =n> number of seeds added in each plot of each species
+#siteData = <vector,length =n> siteID for each record
 
 # OVERDISPERSED, NO INTERACTION ---------
 
 #Model based on Zuur ZI Models book p. 55
+# 10/14/2015 the offset is in the wrong place here, but this one runs
 
 write("
       model{
@@ -190,13 +189,11 @@ plotDatasub$uniquePlotNum<-as.numeric(as.factor(as.character(plotDatasub$uniqueP
 
 jags.dat<-list(
   y=plotDatasub$germ.y1, # number of naturally occuring + germinated for species of interest only 
-  #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
-  #nplot=length(unique(plotDatasub$uniquePlotNum)),
   nsite=length(unique(plotDatasub$site)),
   n=nrow(plotDatasub),
   germRate=runif (length(unique(plotDatasub$site)),0.6, 0.8), # make up a number between zero and 1 for each site (length of the number of sites)
-  seedT=plotDatasub$seedT+1,
-  scarT=plotDatasub$scarT+1,
+  seedT=plotDatasub$seedT,
+  scarT=plotDatasub$scarT,
   #sitePlot=plotDatasub$siteNum, #vector indicating site, length of the total number of unique plots
   numSeeded=plotDatasub$seeds.per.plot, #fix this to be the proper number PER SPECIES/PROVENANCE
   #plot=plotDatasub$uniquePlotNum,
@@ -211,18 +208,36 @@ write("
       #difference in background rate for scarified and not scarified plots (both not seeded)
       for (i in 1:n){ #i indexes over data rows
       y[i]~dpois(mu[i])
+      #this keeps mu from going crazy places
       log(mu[i])<-max(-20,min(20,eta[i]))
-      eta[i]<-log(trials[i])+aSite[siteData[i],seedT[i],scarT[i]]+e[i]
+
+      #expected values for each datapoint
+      #if trtmt = c -> aSite
+      #if trtmt = scarified -> aSite +bScar
+      #if trtmt = seeded ->aSite + bSeed +offset(log(numSeeded))
+      #if trtmt = seed+scar -> aSite +bscar + offset (log(numseeded))+cinteract
+
+      eta[i]<-aSite[siteData[i]]+ bScar[siteData[i]]*scarT[i]+
+        log(trials[i])*seedT[i]+
+        bSeed[siteData[i]]*seedT[i]+
+        cInteract[siteData[i]]*seedT[i]*scarT[i]
+      # if we had measurements of uncertainty on the germRates we could incorporate it here
       trials[i]<-numSeeded[i]*germRate[siteData[i]] #make this not fixed? 
       
       e[i]~dnorm(0,tau.resid)
       
       #Discrepancy measures
+      
       yNew[i]~dpois(mu[i])
       PRes[i]<-(y[i]-mu[i])/sqrt(mu[i])
       PResNew[i]<-(yNew[i]-mu[i])/sqrt(mu[i])
       D[i]<-(PRes[i]*PRes[i])
       DNew[i]<-(PResNew[i]*PResNew[i])
+
+      #SCE is not sure how you calculate expY now that the
+      # overdispersion term is in there, this might not be quite right
+      # the line is copied from the example Zuur model WITHOUT overdispersion
+      # we might want something other than tauEmerge here??
       ExpY[i]<-exp(eta[i])*exp(tauEmerge/2)
       
       VarY[i]<-exp(eta[i])*(exp(eta[i])*(exp(tauEmerge)-1)*exp(tauEmerge)+exp(tauEmerge/2))
@@ -231,86 +246,78 @@ write("
       
       }
       
-      Dispersion<-sum(Disp1) #[]?
+      Dispersion<-sum(Disp1) 
       Fit<-sum(D)
       FitNew<-sum(DNew)
       
       
       for (k in 1:nsite){
-        for (l in 1:2){
-          for (m in 1:2){
-      #bscarT[k]~dnorm(muScarT, tauScarT) #mean scarTvarislogscale
-      aSite[k,l,m]~dnorm(muEmerge[l,m], tauEmerge) # baseline success rate, logscale
-      #bseedT[k]~dnorm(muSeedT,tauSeedT)
+        #for (m in 1:2){ #m indexes over seed trtmts
+        # baseline success rate in unscarified treatments (log scale)
+        #log scale
+        aSite[k]~dnorm(muEmerge, tauEmerge)
+        #effect of seeding per viable seed added
+        bScar[k]~dnorm(muScar, tauScar)
+        bSeed[k]~dnorm(muSeed, tauSeed)
+        cInteract[k]~dnorm(muInteract, tauInteract)
       }
-      }
-      }
+
       
       #priors
-      
+      #grand means for emergence, and betas of scar, seed, and interaction
+      muEmerge~dnorm(0,0.0001)
+      muScar~dnorm(0,0.0001)
+      muSeed~dnorm(0,0.0001)
+      muInteract~dnorm(0,0.0001)
+  
+      #overdispersion
       tau.resid<-1/(sigmaResid*sigmaResid)
       sigmaResid~dunif(0,10)
       
       tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
       sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
       
-      #tauScarT<-1/(sigmaScarT*sigmaScarT)
-      #sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+      tauScar<-1/(sigmaScar*sigmaScar)
+      sigmaScar~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
       
-      #tauSeedT<-1/(sigmaSeedT*sigmaSeedT)
-      #sigmaSeedT~dunif (0,10) 
+      tauSeed<-1/(sigmaSeed*sigmaSeed)
+      sigmaSeed~dunif (0,10) 
+      tauInteract<-1/(sigmaInteract*sigmaInteract)
+      sigmaInteract~dunif (0,10) 
       
-      for (l in 1:2){
-        for (m in 1:2){
-        muEmerge[l,m]~dnorm(0,0.0001)
-        }
-      }
-      
-      #muScarT~dnorm(0,0.0001)
-      #muSeedT~dnorm(0,0.0001)
-      
-      #Derived
-
-      interaction<-muEmerge[2,2]-(muEmerge[2,1]+muEmerge[1,2])
-      
-      for (i in 1:nsite){
-        for (j in 1:2){
-          for (k in 1:2){
-            aSiteBT[i,j,k]<-exp(aSite[i,j,k])
+      #predictions 
+      for (k in 1:nsite){
+        for (l in 1:2){#seeding
+          for (m in 1:2){#scarification
+            predVals[k,l,m]<-exp(aSite[k]+bSeed[k]*(l-1)+bScar[k]*(m-1)+
+            cInteract[k]*(l-1)*(m-1))
           }
         }
       }
-      
-      for (i in 1:2){
-        for (j in 1:2){
-          muEmergeBT[i,j]<-exp(muEmerge[i,j])
-        }
-      }
-      
-      #muScarTBT<-exp(muScarT)
-      #muSeedTBT<-exp(muSeedT)
       
       }
       ","gtree_y1germ_overdisp_interact.jags")
 
 #2-way interaction, Back-Transformed
 paramsBT<-NULL
-for (i in 1:jags.dat$nsite){
-  for (j in 1:2){
-    for (k in 1:2){
-    out<-as.vector(paste("aSiteBT[",i,",",j,",",k,"]",sep=""))
+for (k in 1:jags.dat$nsite){
+  for (l in 1:2){
+    for (m in 1:2){
+    out<-as.vector(paste("aSiteBT[",k,",",l,",",m,"]",sep=""))
     paramsBT<-c(paramsBT,out)
   }}}
 
-params<-c("muEmerge", "sigmaEmerge","aSite", "sigmaResid","Dispersion","Fit",
-          "FitNew",paramsBT,"muEmergeBT[1,1]","muEmergeBT[1,2]","muEmergeBT[2,1]","muEmergeBT[2,2]","interaction")
+params<-c("muEmerge", "sigmaEmerge","aSite", "bSeed", "bScar", "cInteract",
+"sigmaResid","Dispersion","Fit",
+          "FitNew","muScar", "muInteract", "muSeed", "sigmaSeed", "sigmaInteract",
+"sigmaScar", paramsBT)
 
 
 library(rjags)
 library(R2jags)
 modout.gtree<-jags(jags.dat,inits=NULL, params, 
                    model.file="gtree_y1germ_overdisp_interact.jags",
-                   n.chains=3,n.iter=10000,n.burnin=600, n.thin=100,
+                   n.chains=3,n.iter=20000,n.burnin=5000, n.thin=10,
                    DIC=TRUE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
