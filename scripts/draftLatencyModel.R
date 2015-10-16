@@ -194,7 +194,7 @@ modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", 
 print(modout.gtree)
 plot(modout.gtree)
 
-#bayesian p value not too bad, would be nicer close to 0.50 but it's not too to extreme
+#bayesian p value not super excellent, but not as bad as some?
 mean(modout.gtree$BUGSoutput$sims.list$FitNew>modout.gtree$BUGSoutput$sims.list$Fit)
 
 coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','97.5%')])
@@ -206,8 +206,8 @@ source ('scripts/split_function.R')
 
 coefsout<-cbind.data.frame(coefsout, t(sapply(rownames(coefsout), function(x) mysplit(x, 3, F))))
 names(coefsout)[names(coefsout)=='1']<-'siteNum'
-names(coefsout)[names(coefsout)=='2']<-'seedT'
-names(coefsout)[names(coefsout)=='3']<-'scarT'
+names(coefsout)[names(coefsout)=='2']<-'scarT'
+names(coefsout)[names(coefsout)=='3']<-'seedT'
 
 coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
 library (ggplot2)
@@ -219,6 +219,7 @@ scarTplot<-ggplot(coefsout[coefsout$Type %in% c("bScar"),])+
   geom_ribbon(aes(x=as.numeric(factor(site)),ymax=coefsout$`97.5%`[coefsout$Type=="muScar"],
                   ymin=coefsout$`2.5%`[coefsout$Type=="muScar"]),alpha=0.2,fill="red")+
   theme_bw()+xlab("\nSITE")+ylab("Treatment Effect\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+ggsave(scarTplot, filename = "figures/scarT_effect_poisson_latency_interaction_bysite.pdf")
 
 #
 natGermplot<-ggplot(coefsout[coefsout$Type %in% c("aSite"),])+
@@ -229,7 +230,7 @@ natGermplot<-ggplot(coefsout[coefsout$Type %in% c("aSite"),])+
   geom_ribbon(aes(x=as.numeric(factor(site)),ymax=coefsout$`97.5%`[coefsout$Type=="muEmerge"],
                   ymin=coefsout$`2.5%`[coefsout$Type=="muEmerge"]),alpha=0.2,fill="red")+
   theme_bw()+xlab("\nSITE")+ylab("Natural Germination\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
-
+ggsave(natGermplot, filename = "figures/naturalGermination_est_poisson_latency_interaction_bysite.pdf")
 
 #
 seedTplot<-ggplot(coefsout[coefsout$Type %in% c("bSeed"),])+
@@ -240,7 +241,7 @@ seedTplot<-ggplot(coefsout[coefsout$Type %in% c("bSeed"),])+
   geom_ribbon(aes(x=as.numeric(factor(site)),ymax=coefsout$`97.5%`[coefsout$Type=="muSeed"],
                   ymin=coefsout$`2.5%`[coefsout$Type=="muSeed"]),alpha=0.2,fill="red")+
   theme_bw()+xlab("\nSITE")+ylab("Treatment effect\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
-
+ggsave(seedTplot, filename = "figures/sweedTT_effect_poisson_latency_interaction_bysite.pdf")
 
 InteractionPlot<-ggplot(coefsout[coefsout$Type %in% c("cInteract"),])+
   geom_point(aes(x=site,y=mean),size=6)+
@@ -250,16 +251,25 @@ InteractionPlot<-ggplot(coefsout[coefsout$Type %in% c("cInteract"),])+
   geom_ribbon(aes(x=as.numeric(factor(site)),ymax=coefsout$`97.5%`[coefsout$Type=="muInteract"],
                   ymin=coefsout$`2.5%`[coefsout$Type=="muInteract"]),alpha=0.2,fill="red")+
   theme_bw()+xlab("\nSITE")+ylab("Treatment effect\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+ggsave(InteractionPlot, filename = "figures/Interaction_effect_poisson_latency_interaction_bysite.pdf")
 
 
 #plots of expected values on the raw data scale
-#SCE build up by layer
+#but make log y axis
+base_breaks <- function(n = 10){
+  function(x) {
+    axisTicks(log10(range(x, na.rm = TRUE)), log = TRUE, n = n)
+  }
+}
 
 plot.Teff<-ggplot(coefsout[coefsout$Type=="predVals",])+
   geom_hline(yintercept=0,linetype="dotted")+
   geom_point(aes(x=site,y=mean,colour=factor(seedT):factor(scarT)),size=6,position=position_dodge(width=0.5))+
   geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=factor(seedT):factor(scarT)),width=0.18,size=1.8,position=position_dodge(width=0.5))+scale_colour_manual(values=c("black","orange","blue","darkgreen"),name="Treatment",breaks=c("1:1","1:2","2:1","2:2"),labels=c("control","scarified","seeded","seeded+scarified"))+
-  theme_bw()+xlab("\nSITE")+ylab("Treatment Effect Coefficient\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=20,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+  theme_bw()+xlab("\nSITE")+ylab("Estimated # seedlings \n w/100 added seeds for seeded plots)\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=20,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())+
+  scale_y_continuous(trans = 'log', breaks = base_breaks(),labels = prettyNum) + 
+  theme(panel.grid.minor = element_blank())
+
 
 
 
