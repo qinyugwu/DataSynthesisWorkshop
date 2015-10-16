@@ -2,137 +2,160 @@
 
 plotDatasub<-read.csv('data/subsets/plotDatasub.csv')
 
+plotDatasub$seeds.per.plot[plotDatasub$site=="Craigieburn"]<-150
+plotDatasub$seeds.per.plot[plotDatasub$site=="Tesso"]<-300
+plotDatasub$seeds.per.plot[plotDatasub$site=="Texas Creek"]<-100
+
+#get rid of any sites missing data entirely - this will exclude Churchill
+# for now
+
+plotDatasub<-plotDatasub[!is.na(plotDatasub$germ.y1),]
+
+plotDatasub$siteNum<-as.numeric(as.factor(as.character(plotDatasub$site)))
+plotDatasub$uniquePlotNum<-as.numeric(as.factor(as.character(plotDatasub$uniquePlot)))
 
 
-#For JAGS
-
-plotDatasub$siteNum<-as.numeric(as.factor(plotDatasub$site))
-plotDatasub$uniquePlotNum<-as.numeric(as.factor(plotDatasub$uniquePlot))
-
-#plots<-unique(plotDatasub[,c("siteNum","uniquePlotNum","seedT","scarT")])
 
 jags.dat<-list(
-  #y=plotDatasub$tot.emerge.y1, # number of naturally occuring + germinated for species of interest only (in that plot)
-  #y=ifelse(is.na(plotDatasub$exp.seedling.count.y1),0,plotDatasub$exp.seedling.count.y1),
-  y=plotDatasub$surv.yr1,
-  nplot=length(unique(plotDatasub$uniquePlotNum)),
+  y=plotDatasub$germ.y1, # number of naturally occuring + germinated for species of interest only 
   nsite=length(unique(plotDatasub$site)),
   n=nrow(plotDatasub),
-  #fake germ rate make up a number between zero and 1 for each site
-  germRate=runif (length(unique(plotDatasub$site)),0.6, 0.8),
-  siteNum=c(1:length(unique(plotDatasub$site))), 
-  #germRate=germRate$germRate, # make up a number between zero and 1 for each site (length of the number of sites)
-  #siteData=germRate$siteNum, #one value indicating site to go with germ Rate
+  germRate=runif (length(unique(plotDatasub$site)),0.6, 0.8), # make up a number between zero and 1 for each site (length of the number of sites)
   seedT=plotDatasub$seedT,
   scarT=plotDatasub$scarT,
-  sitePlot=plotDatasub$siteNum, #vector indicating site, length of the total number of unique plots
+  #sitePlot=plotDatasub$siteNum, #vector indicating site, length of the total number of unique plots
   numSeeded=plotDatasub$seeds.per.plot, #fix this to be the proper number PER SPECIES/PROVENANCE
   #plot=plotDatasub$uniquePlotNum,
   siteData=plotDatasub$siteNum
-  )
+)
 
 str(jags.dat)
 
+#data description
+#y = response variable, such as count of germinants in a particular year <vector,length =n>
+#nsite = number of sites included in analysis <scalar>
+#n = total number of data points (rows in data) <scalar>
+#germrate = estimate of seed viability in lab.
+#seedT = seeding treatment per record, 1= seeded, 0 = not seeded.<vector,length =n>
+#scarT = seeding treatment per record, 1= seeded, 0 = not seeded.<vector,length =n>
+#numSeeded -><vector,length =n> number of seeds added in each plot of each species
+#siteData = <vector,length =n> siteID for each record
 
-#numAdded = 100
-#numNatOccuring = 10
 
-#y=rpois(1,100) + numNatOccuring
-
-#log(y) = Bprop*log(numAdded + numNatOccuring)
-
-#need n = number of data points
-#need a vector one per row of data y ->total#seedlings of species of interest
-#need a vector one per row of data seedT ->seeded or not?
-#need a vector one per row of plot ->ids per row
-#need a vector one per row of numseeded ->ids
-#need a vector one per row of site -> ids
-
+#SCE need to move the indenting
 write("
-      model{
-for (i in 1:n){ #i indexes over data rows
-  #data level - SCE note could make this overdispersed if necessary
-  y[i]~dpois(y.exp[i]) 
-  #predicted number is the sum of those recruited from added seeds +
-  #the background rate from nonexperimentally added
-  y.exp[i]<-numTrtRecruit[i] + muBackgroundSiteScar[siteData[i], (scarT[i]+1)]  #mixture
-
-  #no longer used - binomial option that caused jags unhappiness
-  #when we modeled y as a sum
-  #numTrtRecruitALL[i]<-numTrtRecruit[i]*seedT[i] #this will cause the numTrtRecruit not to enter the likelihood for the nonseeded plots
-  #numTrtRecruit[i]~dbinom(emergRate[plot[i]], trials[i]) 
-
-}
-
-#need a vector sitePlot of each sitenumber for each plot
-#need a vector of scarT (1,0) for each plot
-for (j in 1:nplot){
-  #num that recruited from the seed treatment addition is a function of
-  #the number of trials (viableseeds added - so result is in per viable seed added)
-  #plus asite which is the intercept for seed addition (log scale)
-  #plus bscarT which is the addition amt of recruitment per seed added by doing scarification
-  # the multiplication by seedT will make this term 0 out for nonseeded plots.
-  numTrtRecruit[j]<-(exp(log(trials[j])+aSite[sitePlot[j]]+bscarT[sitePlot[j]]*scarT[j]))*seedT[j]
+  model{
+    for (i in 1:n){ #i indexes over data rows
+    #data level - SCE note could make this overdispersed if necessary
+    y[i]~dpois(mu[i]) 
+    #log(mu[i])<-max(-20,min(20,eta[i]))
+    #predicted number is the sum of those recruited from added seeds +
+    #the background rate from nonexperimentally added
+    #mixture
+    mu[i]<-exp(numTrtRecruit_trunc[i]) + exp(numBackground_trunc[i] + e[i])
+    e[i]~dnorm(0,tau.resid)#mixture
   
-  #estimate of viable seed intensity
-  trials[j]<-numSeeded[j]*germRate[sitePlot[j]]#make this not fixed? 
-  #numBackground[j]<-muBackgroundsite[sitePlot[j]]
-}
+    #expectation for the number coming up from seeding
+    #help with convergence
+    numTrtRecruit_trunc[i]<-max(-20, min(20, numTrtRecruit[i]))
+    numTrtRecruit[i]<-bSeed[siteData[i]]*seedT[i]+
+    cInteract[siteData[i]]*scarT[i]*seedT[i]+
+        log(trials[i])*seedT[i]
+    numBackground_trunc[i]<-max(-20, min(20, numBackground[i]))
+    #expectation for the number coming up w/o seeding
+    numBackground[i]<-aSite[siteData[i]]+ bScar[siteData[i]]*scarT[i]
+  
+    #estimate of viable seed intensity
+    trials[i]<-numSeeded[i]*germRate[siteData[i]]#make this not fixed? 
+    #numBackground[j]<-muBackgroundsite[siteData[j]]
 
+    #no longer used - binomial option that caused jags unhappiness
+    #when we modeled y as a sum
+  #numTrtRecruitALL[i]<-numTrtRecruit[i]*seedT[i] #this will cause the numTrtRecruit not to enter the likelihood for the nonseeded plots
+    #numTrtRecruit[i]~dbinom(emergRate[plot[i]], trials[i]) 
+    }
 
-for (k in 1:nsite){
-  for (m in 1:2){# for both notscarified and scarified
-# #option for if we have raw data for each site
-  #germRate[k] ~ dbinom(germinants[k], seeds[k])
-  #need to keep the next line positive, either lognormal or log the vals
-  #mean background emergence rate in each scarifed treatment, here 1 indexes for nonscarified
-  #2 indexes for scarified, #1 fornonscarifiedg
-     #difference between muBackgroundsites is the difference in background between scarified and nonscarified
-    #drawn from hierarchicial model hyperparameter across sites
-    logmuBackgroundSiteScar[k, m]~dnorm(muBackgroundScarT[m], taoBackgroundScarT[m]) 
-    muBackgroundSiteScar[k, m]<-exp(logmuBackgroundSiteScar[k, m])
+    
+    #num that recruited from the seed treatment addition is a function of
+    #the number of trials (viableseeds added - so result is in per viable seed added)
+    #note you can have numSeeded in here for ctls - it must be nonzero for the calculation
+    # to run but doesn't enter the likelihood
+    #plus asite which is the intercept for seed addition (log scale)
+    #plus bscarT which is the addition amt of recruitment per seed added by doing scarification
+    # the multiplication by seedT will make this term 0 out for nonseeded plots.
+
+  for (k in 1:nsite){
+      #for (m in 1:2){ #m indexes over seed trtmts
+        # baseline success rate in unscarified treatments (log scale)
+        #log scale
+        aSite[k]~dnorm(muEmerge, tauEmerge)
+        #effect of seeding per viable seed added
+        bScar[k]~dnorm(muScar, tauScar)
+        bSeed[k]~dnorm(muSeed, tauSeed)
+        cInteract[k]~dnorm(muInteract, tauInteract)
   }
-  #these never enter the likelihood for seeded treatments
-  bscarT[k]~dnorm(muScarT, taoScarT) #the trtmt effect of scarification in seeded
-  aSite[k]~dnorm(muEmerge, tauEmerge) # baseline success rate w seeding, logscale
-}
 
-
-#priors
-tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
-sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
-
-taoScarT<-1/(sigmaScarT*sigmaScarT)
-sigmaScarT~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
-
-for (m in 1:2){
-  taoBackgroundScarT[m]<-1/sigmaBackgroundScarT[m]*sigmaBackgroundScarT[m]
-  sigmaBackgroundScarT[m]~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
-  muBackgroundScarT[m]~dnorm(0,0.001)
-}
-
-
-
-muEmerge~dnorm(0,0.001)
-muScarT~dnorm(0,0.001)
-
-
-# #poisson option, trials same as below
-# numTrtRecruit[trt==seeded]~poisson (muRecruit)
-# muRecruit=exp(log(trials)+aSite[site[i]+bscarifcation[site[i]*scarifiation[plot[i]]]]) # could add in extra poisson resid variation here if wanted
+     #priors
+      #grand means for emergence, and betas of scar, seed, and interaction
+      muEmerge~dnorm(0,0.0001)
+      muScar~dnorm(0,0.0001)
+      muSeed~dnorm(0,0.0001)
+      muInteract~dnorm(0,0.0001)
+  
+      #overdispersion
+      tau.resid<-1/(sigmaResid*sigmaResid)
+      sigmaResid~dunif(0,10)
+      
+      tauEmerge<-1/(sigmaEmerge*sigmaEmerge)
+      sigmaEmerge~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+      
+      tauScar<-1/(sigmaScar*sigmaScar)
+      sigmaScar~dunif (0,10) #check this makes sens with the vals and posterior or coudl change to gamma
+      
+      tauSeed<-1/(sigmaSeed*sigmaSeed)
+      sigmaSeed~dunif (0,10) 
+      tauInteract<-1/(sigmaInteract*sigmaInteract)
+      sigmaInteract~dunif (0,10) 
 
 #Derived
-
-for (i in 1:nsite){
-  bscarTBT[i]<-exp(bscarT[i])
-}
-
-muBackgroundBT<-exp(muBackground)
-muEmergeBT<-exp(muEmerge)
-muScarTBT<-exp(muScarT)
+#Discrepancy measures
+      for (i in 1:n){
+      yNew[i]~dpois(mu[i])
+      PRes[i]<-(y[i]-mu[i])/sqrt(mu[i])
+      PResNew[i]<-(yNew[i]-mu[i])/sqrt(mu[i])
+      D[i]<-(PRes[i]*PRes[i])
+      DNew[i]<-(PResNew[i]*PResNew[i])
+      
+      #SCE is not sure how you calculate expY now that the
+      # overdispersion term is in there, this might not be quite right
+      # the line is copied from the example Zuur model WITHOUT overdispersion
+      # we might want something other than tauEmerge here??
+      ExpY[i]<-exp(mu[i])*exp(tauEmerge/2)
+      
+      VarY[i]<-exp(mu[i])*(exp(mu[i])*(exp(tauEmerge)-1)*exp(tauEmerge)+exp(tauEmerge/2))
+      PResEQ[i]<-(y[i]-ExpY[i])/sqrt(VarY[i])
+      Disp1[i]<-(PResEQ[i]*PResEQ[i])
+      
+      }
+      
+      Dispersion<-sum(Disp1) 
+      Fit<-sum(D)
+      FitNew<-sum(DNew)
+      
+      #predictions scaled to an avg treatment of 100 viable seeds
+     for (k in 1:nsite){
+        for (l in 1:2){#seeding
+          for (m in 1:2){#scarification
+            predVals[k,l,m]<-exp(aSite[k]+bScar[k]*(m-1))+exp(bSeed[k]*(l-1)+
+    cInteract[k]*(m-1)*(l-1)+
+        log(100)*(l-1))
+          }
+        }
+      }
 
       }
       ","gtree_y1germ.jags")
+
 
 # initsA<-list(muBackground=c(rnorm(jags.dat$nplot-1,0,2),NA),t=as.vector(apply(jags.dat$lim,1,mean)),sigma.plot=runif(1,0,1),sigma=rlnorm(1))
 # 
@@ -145,51 +168,104 @@ muScarTBT<-exp(muScarT)
   
 params<-c("muEmerge", "sigmaEmerge","muScarT", "sigmaScarT","muBackground", "sigmaBackground","bscarT","aSite","muBackgroundsite","muEmergeBT","muBackgroundBT","muScarTBT")
 
+
+paramsBT<-NULL
+for (k in 1:jags.dat$nsite){
+  for (l in 1:2){
+    for (m in 1:2){
+      out<-as.vector(paste("predVals[",k,",",l,",",m,"]",sep=""))
+      paramsBT<-c(paramsBT,out)
+    }}}
+
+params<-c("muEmerge", "sigmaEmerge","aSite", "bSeed", "bScar", "cInteract",
+          "sigmaResid",#"Dispersion",
+          "Fit",
+          "FitNew","muScar", "muInteract", "muSeed", "sigmaSeed", "sigmaInteract",
+          "sigmaScar", paramsBT)
+
+
+
+
+
 library(rjags)
 library(R2jags)
-modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=10000,n.burnin=2000, n.thin=2, DIC=FALSE, working.directory=NULL, progress.bar = "text")
+modout.gtree<-jags(jags.dat,inits=NULL, params, model.file="gtree_y1germ.jags", n.chains=3,n.iter=10000,n.burnin=2000, n.thin=2, DIC=TRUE, working.directory=NULL, progress.bar = "text")
 
 print(modout.gtree)
 plot(modout.gtree)
 
+#bayesian p value not too bad, would be nicer close to 0.50 but it's not too to extreme
+mean(modout.gtree$BUGSoutput$sims.list$FitNew>modout.gtree$BUGSoutput$sims.list$Fit)
 
 coefsout<-as.data.frame(modout.gtree$BUGSoutput$summary[,c('mean','sd','2.5%','97.5%')])
 
 #get coefficient name (before the square brackets)
 coefsout$Type<-as.vector(sapply(strsplit(rownames(coefsout),"[[]",fixed=FALSE), "[", 1))
 
-#site number hardcoded so we should maybe fix this using the mysplit, copy 
-#from draftPoissonOverdispInteracct
-coefsout$siteNum<-as.vector(c(rep(1:10,2),NA,NA,rep(1:10,1),rep(NA,7)))
+source ('scripts/split_function.R')
 
-#adding the name of the site
+coefsout<-cbind.data.frame(coefsout, t(sapply(rownames(coefsout), function(x) mysplit(x, 3, F))))
+names(coefsout)[names(coefsout)=='1']<-'siteNum'
+names(coefsout)[names(coefsout)=='2']<-'seedT'
+names(coefsout)[names(coefsout)=='3']<-'scarT'
+
 coefsout$site<-plotDatasub$site[match(coefsout$siteNum,plotDatasub$siteNum)]
-
-head(coefsout)
-
-ggplot(coefsout[coefsout$Type %in% c("bscarT"),])+
+library (ggplot2)
+scarTplot<-ggplot(coefsout[coefsout$Type %in% c("bScar"),])+
   geom_point(aes(x=site,y=mean),size=6)+
-  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`),width=0.18,size=1.8)+
+  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=Type),width=0.18,size=1.8,position=position_dodge(width=0.5))+
   geom_hline(yintercept=0,linetype="dotted")+
   #this is the coefsout mean effects
-  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=0.19676482,ymin=-0.18679486),alpha=0.2,fill="red")+
+  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=coefsout$`97.5%`[coefsout$Type=="muScar"],
+                  ymin=coefsout$`2.5%`[coefsout$Type=="muScar"]),alpha=0.2,fill="red")+
   theme_bw()+xlab("\nSITE")+ylab("Treatment Effect\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
 
-ggplot(coefsout[coefsout$Type %in% c("muBackgroundsite"),])+
+#
+natGermplot<-ggplot(coefsout[coefsout$Type %in% c("aSite"),])+
   geom_point(aes(x=site,y=mean),size=6)+
-  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`),width=0.18,size=1.8)+
+  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=Type),width=0.18,size=1.8,position=position_dodge(width=0.5))+
   geom_hline(yintercept=0,linetype="dotted")+
-  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=1.03232375,ymin=0.70167283),alpha=0.2,fill="red")+
-  theme_bw()+xlab("\nSITE")+ylab("Background Germination Number\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+  #this is the coefsout mean effects
+  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=coefsout$`97.5%`[coefsout$Type=="muEmerge"],
+                  ymin=coefsout$`2.5%`[coefsout$Type=="muEmerge"]),alpha=0.2,fill="red")+
+  theme_bw()+xlab("\nSITE")+ylab("Natural Germination\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
 
-ggplot(coefsout[coefsout$Type %in% c("aSite"),])+
+
+#
+seedTplot<-ggplot(coefsout[coefsout$Type %in% c("bSeed"),])+
   geom_point(aes(x=site,y=mean),size=6)+
-  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`),width=0.18,size=1.8)+
+  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=Type),width=0.18,size=1.8,position=position_dodge(width=0.5))+
   geom_hline(yintercept=0,linetype="dotted")+
-  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=1.03232375,ymin=0.70167283),alpha=0.2,fill="red")+
-  theme_bw()+xlab("\nSITE")+ylab("Background Germination Number\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+  #this is the coefsout mean effects
+  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=coefsout$`97.5%`[coefsout$Type=="muSeed"],
+                  ymin=coefsout$`2.5%`[coefsout$Type=="muSeed"]),alpha=0.2,fill="red")+
+  theme_bw()+xlab("\nSITE")+ylab("Treatment effect\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
 
 
+InteractionPlot<-ggplot(coefsout[coefsout$Type %in% c("cInteract"),])+
+  geom_point(aes(x=site,y=mean),size=6)+
+  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=Type),width=0.18,size=1.8,position=position_dodge(width=0.5))+
+  geom_hline(yintercept=0,linetype="dotted")+
+  #this is the coefsout mean effects
+  geom_ribbon(aes(x=as.numeric(factor(site)),ymax=coefsout$`97.5%`[coefsout$Type=="muInteract"],
+                  ymin=coefsout$`2.5%`[coefsout$Type=="muInteract"]),alpha=0.2,fill="red")+
+  theme_bw()+xlab("\nSITE")+ylab("Treatment effect\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=24,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+
+
+#plots of expected values on the raw data scale
+#SCE build up by layer
+
+plot.Teff<-ggplot(coefsout[coefsout$Type=="predVals",])+
+  geom_hline(yintercept=0,linetype="dotted")+
+  geom_point(aes(x=site,y=mean,colour=factor(seedT):factor(scarT)),size=6,position=position_dodge(width=0.5))+
+  geom_errorbar(aes(x=site,ymin=`2.5%`,ymax=`97.5%`,colour=factor(seedT):factor(scarT)),width=0.18,size=1.8,position=position_dodge(width=0.5))+scale_colour_manual(values=c("black","orange","blue","darkgreen"),name="Treatment",breaks=c("1:1","1:2","2:1","2:2"),labels=c("control","scarified","seeded","seeded+scarified"))+
+  theme_bw()+xlab("\nSITE")+ylab("Treatment Effect Coefficient\n")+theme(legend.title=element_text(size=24,face="bold"),legend.text=element_text(size=20),legend.position="right",legend.key = element_rect(colour = "white"),axis.text.x=element_text(size=22,angle=45,hjust=1),axis.text.y=element_text(hjust=0,size=22),axis.title.x=element_text(size=24,face="bold"),axis.title.y=element_text(angle=90,size=20,face="bold",vjust=0.3),axis.ticks = element_blank(),panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+
+
+
+
+
+###########################################################
 # FARM - original (not-working) model
 
 write("
